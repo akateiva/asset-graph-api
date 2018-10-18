@@ -1,25 +1,28 @@
 import {Observable} from 'rxjs';
 import IMarketTicker from './IMarketTicker';
 import DataSource from './DataSource'
-import * as Graph from './AssetGraph';
+import * as Graph from './AssetGraph2';
 
 
 async function main(){
   console.log('starting')
-  const graph = new Graph.AssetGraph();
+  const graph = new Graph.Graph();
   console.log('making data source')
   const dataSource = new DataSource("mongodb://localhost:27017");
   await dataSource.connect();
-  console.log('getting symbols')
+  console.log('getting latest tickers')
   const tickers = await dataSource.getLatestMarketTickers();
   for (let ticker of tickers){
-    graph.addMarket(ticker);
+    graph.processMarketTicker(ticker);
   }
   console.log('graph constructedd');
-  const usdt = graph.getNodeByAssetSymbol('GBP');
-  const usd = graph.getNodeByAssetSymbol('EUR');
-  const rate = usdt.findExchangeRate(usd);
-  console.log(`${usdt.assetSymbol} - ${usd.assetSymbol} rate is ${rate}`);
+  console.log('vertex count', graph.getVertexCount());
+
+  // real shit starts here
+  const usdt = graph.getVertexByAsset({symbol: "BTC"});
+  const usd = graph.getVertexByAsset({symbol: "USDT"});
+  const path = graph.findShortestPath(usdt, usd);
+  console.log(graph.getPathExchangeRate(path))
 
 }
 
