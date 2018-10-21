@@ -1,5 +1,5 @@
 import mongo from "mongodb";
-import IMarketTicker from "./IMarketTicker";
+import {IMarketTicker} from "./models/AssetGraph";
 import fs from "fs";
 
 const FIVE_MINUTES = 5 * 60 * 1000;

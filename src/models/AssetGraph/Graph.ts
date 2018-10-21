@@ -1,4 +1,5 @@
-import IMarketTicker from './IMarketTicker';
+import {Edge, Vertex, AssetSymbol, IMarketTicker, Path,  Asset, IAssetTransition, IArbitrageCycle, IConversionResult} from './index';
+
 import pino from 'pino';
 
 const logger = pino({
@@ -6,89 +7,17 @@ const logger = pino({
   level: 'debug'
 });
 
-export type AssetSymbol = string;
-
-export interface Asset {
-  symbol: AssetSymbol
-}
-
-/*
-interface Exchange {
-  name: string
-}*/
-
-export type Exchange = string;
-
-export type Path = Edge[];
-
-export interface MarketPair {
-  exchange: Exchange
-  base: Asset 
-  market: Asset
-  basePrice: number
-  baseVolume: number
-}
-
-// directed edge
-export class Edge {
-  public start: Vertex;
-  public end: Vertex;
-  public pairs: Map < Exchange, MarketPair > = new Map < Exchange, MarketPair > ();
-
-  constructor(start: Vertex, end: Vertex) {
-    this.start = start;
-    this.end = end;
-    start.edges.push(this);
-  }
-
-  public averageExchangeRate() : number{
-    var numerator = 0;
-    var denominator = 0;
-    for (let marketPair of this.pairs.values()){
-      if(marketPair.market === this.start.asset){
-        numerator += marketPair.baseVolume * marketPair.basePrice;
-        denominator += marketPair.baseVolume;
-      }else{
-        numerator = 1/(marketPair.basePrice * marketPair.baseVolume);;
-        denominator += 1/marketPair.baseVolume;
-      }
-    }
-    return numerator/denominator;
+function getTransitionExchangeRate(transition: IAssetTransition) {
+  if (transition.pair.market === transition.edge.start.asset) {
+    return transition.pair.basePrice;
+  } else {
+    return 1 / transition.pair.basePrice;
   }
 }
 
-export class Vertex {
-  public asset: Asset;
-  public edges: Edge[] = [];
-
-  constructor(asset: Asset) {
-    this.asset = asset;
-  }
-
-  public getNeighbors(): Vertex[]{
-    return this.edges.map((edge) => edge.end);
-  }
-}
-
-
-export interface IConversionResult {
-  from: string;
-  to: string;
-  rate: number;
-  via: {
-    marketPair: MarketPair;
-  }[]
-}
-
-export class Graph {
+export default class Graph {
   private vertices: Map < AssetSymbol, Vertex > = new Map < AssetSymbol, Vertex > ();
-  //private edges: Map<Vertex, Edge[]> = new Map<Vertex, Edge[]>();
 
-  /**
-   * returns a graph vertex for a particular asset
-   *
-   * @returns {Vertex} the vertex that represents the asset
-   */
   public getVertexByAsset(asset: Asset): Vertex {
     var vertex = this.vertices.get(asset.symbol);
     if (!vertex) {
@@ -149,17 +78,17 @@ export class Graph {
     }
   }
 
-  private reconstructPath(start: Vertex, end: Vertex, cameFrom: Map<Vertex, Vertex>): Path{
+  private reconstructPath(start: Vertex, end: Vertex, cameFrom: Map < Vertex, Vertex > ): Path {
     var current = end;
     var path: Path = [];
-    while(cameFrom.has(current)){
-      const from = cameFrom.get(current)!;
+    while (cameFrom.has(current)) {
+      const from = cameFrom.get(current) !;
       //TODO: camefrom save edges
       const to = current;
       current = from;
-      const viaEdge: Edge = from.edges.find((edge) => edge.end === to)!;
+      const viaEdge: Edge = from.edges.find((edge) => edge.end === to) !;
       path.unshift(viaEdge)
-      if(current === start) break;
+      if (current === start) break;
     }
     return path;
   }
@@ -168,9 +97,12 @@ export class Graph {
   public findShortestPath(start: Vertex, end: Vertex): Path {
     const closedSet: Vertex[] = [];
     const openSet: Vertex[] = [start];
-    const cameFrom = new Map < Vertex, Vertex > ();
-    const gScore = new Map < Vertex, number > ();
-    const fScore = new Map < Vertex, number > ();
+    const cameFrom = new Map < Vertex,
+      Vertex > ();
+    const gScore = new Map < Vertex,
+      number > ();
+    const fScore = new Map < Vertex,
+      number > ();
     fScore.set(start, 1);
 
     while (openSet.length > 0) {
@@ -205,28 +137,56 @@ export class Graph {
     return [];
   }
 
-  public getPathExchangeRate(path: Path) : IConversionResult{
+  public getPathExchangeRate(path: Path): IConversionResult {
     var rate = 1;
 
     path.forEach((edge) => {
       const edgeRate = edge.averageExchangeRate();
-      logger.trace("%d %s -> %d %s rate: %d", rate, edge.start.asset.symbol, rate*edgeRate, edge.end.asset.symbol, edgeRate);
-      //console.log(edge);
-      //console.log(edgeRate)
+      logger.trace("%d %s -> %d %s rate: %d", rate, edge.start.asset.symbol, rate * edgeRate, edge.end.asset.symbol, edgeRate);
       rate *= edgeRate;
     })
     var result: IConversionResult = {
       from: path[0].start.asset.symbol,
-      to: path[path.length-1].end.asset.symbol,
+      to: path[path.length - 1].end.asset.symbol,
       rate,
       via: []
     }
     return result;
   }
-}
 
-/*
-const testGraph = new Graph();
-testGraph.processMarketTicker({"Name":"USDT-BTC","Last":6728.13,"BaseVolume":139944703.85608774,"ReceivedOn": new Date(),"MarketCurrency":"BTC","BaseCurrency":"USDT","Exchange":"Binance","Ask":6728.13,"Bid":6725.84,"WriteDate": new Date()});
-testGraph.processMarketTicker({"Name":"USDT-BTC","Last":0.0001486297084,"BaseVolume":20799,"ReceivedOn": new Date(),"MarketCurrency":"USDT","BaseCurrency":"BTC","Exchange":"Binance","Ask":0.0001486297084,"Bid":0.0001486297084,"WriteDate": new Date()});
-   */
+  private findTransitions(vertex: Vertex): IAssetTransition[] {
+    return vertex.edges.reduce((transitions: IAssetTransition[], edge) => {
+      return transitions.concat(...Array.from(edge.pairs.values()).map((pair) => {
+        return {
+          edge,
+          pair
+        }
+      }))
+    }, [] as IAssetTransition[])
+  }
+
+  public findArbitrageTriangles(vertex: Vertex): IArbitrageCycle[] {
+    const firstOrderTransitions = this.findTransitions(vertex);
+    return firstOrderTransitions.reduce((acc: IArbitrageCycle[], firstOrderTransition) => {
+      const firstOrderRate = getTransitionExchangeRate(firstOrderTransition);
+      const secondOrderTransitions = this.findTransitions(firstOrderTransition.edge.end)
+      secondOrderTransitions.forEach((secondOrderTransition) => {
+        const secondOrderRate = getTransitionExchangeRate(secondOrderTransition);
+        //make sure third order transition
+        const thirdOrderTransitions = this.findTransitions(secondOrderTransition.edge.end)
+          .filter((transition) => transition.edge.end === vertex)
+        thirdOrderTransitions.forEach((thirdOrderTransition) => {
+          const thirdOrderRate = getTransitionExchangeRate(thirdOrderTransition);
+          const cycleRate = firstOrderRate * secondOrderRate * thirdOrderRate
+          if (cycleRate >= 1.005) {
+            acc.push({
+              rate: cycleRate,
+              transitions: [firstOrderTransition, secondOrderTransition, thirdOrderTransition]
+            })
+          }
+        })
+      })
+      return acc;
+    }, [])
+  }
+}

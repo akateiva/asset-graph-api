@@ -1,12 +1,15 @@
-import {Observable} from 'rxjs';
-import IMarketTicker from './IMarketTicker';
-import DataSource from './DataSource'
-import * as Graph from './AssetGraph2';
-
+import * as AssetGraph from './models/AssetGraph';
+import * as AssetGraphController from './controllers/AssetGraph.controller'
+import DataSource from './DataSource';
+import Server from './Server';
 
 async function main(){
   console.log('starting')
-  const graph = new Graph.Graph();
+  const server = new Server();
+
+  const graph = new AssetGraph.Graph();
+  AssetGraphController.setDefaultGraph(graph);
+  
   console.log('making data source')
   const dataSource = new DataSource("mongodb://localhost:27017");
   await dataSource.connect();
@@ -17,13 +20,12 @@ async function main(){
   }
   console.log('graph constructedd');
   console.log('vertex count', graph.getVertexCount());
+  
+  await server.listen(3000);
+  console.log('adding controller routes')
 
-  // real shit starts here
-  const usdt = graph.getVertexByAsset({symbol: "BTC"});
-  const usd = graph.getVertexByAsset({symbol: "USDT"});
-  const path = graph.findShortestPath(usdt, usd);
-  console.log(graph.getPathExchangeRate(path))
-
+  
+  server.app.get('/arbitrage/triangles/:baseAsset', AssetGraphController.getArbitrageTriangles)
 }
 
 main();
