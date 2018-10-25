@@ -1,16 +1,15 @@
 import mongo from "mongodb";
 import {IMarketTicker} from "./models/AssetGraph";
-import fs from "fs";
+import config from "./util/config";
 
 const FIVE_MINUTES = 5 * 60 * 1000;
-
 
 export default class DataSource {
 
   private client: mongo.MongoClient;
 
-  constructor(mongoUrl: string) {
-    this.client = new mongo.MongoClient(mongoUrl, {
+  constructor() {
+    this.client = new mongo.MongoClient(config.get("MONGO_URL"), {
       useNewUrlParser: true
     });
     
