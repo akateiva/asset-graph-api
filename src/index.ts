@@ -18,14 +18,20 @@ async function main(){
   for (let ticker of tickers){
     graph.processMarketTicker(ticker);
   }
-  console.log('graph constructedd');
-  console.log('vertex count', graph.getVertexCount());
   
-  await server.listen(3000);
+  dataSource.subscribeToNewTickers((ticker) => {
+    graph.processMarketTicker(ticker);
+  });
+
+  console.log('graph constructedd');
+  console.log('vertex count', graph.getVertexCount(), 'edge count', graph.getEdgeCount());
+  
+  await server.listen(4000);
   console.log('adding controller routes')
 
   
   server.app.get('/arbitrage/triangles/:baseAsset', AssetGraphController.getArbitrageTriangles)
+  server.app.get('/exchangeRate/:sell/:buy', AssetGraphController.getExchangeRate)
 }
 
 main();

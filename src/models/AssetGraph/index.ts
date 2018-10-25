@@ -17,22 +17,12 @@ export interface MarketPair {
   base: Asset
   market: Asset
   basePrice: number
+  bidPrice?: number
+  askPrice?: number
   baseVolume: number
+  date: Date
 }
 
-export interface IConversionResult {
-  from: string;
-  to: string;
-  rate: number;
-  via: {
-    marketPair: MarketPair;
-  }[]
-}
-
-export interface IAssetTransition {
-  edge: Edge;
-  pair: MarketPair;
-}
 
 export interface IMarketTicker {
   Name: string
@@ -47,9 +37,12 @@ export interface IMarketTicker {
   WriteDate: Date
 }
 
-export interface IArbitrageCycle {
-  rate: number;
-  transitions: IAssetTransition[];
+export interface ITransition {
+  sell: Vertex;
+  buy: Vertex;
+  edge: Edge;
+  marketPair: MarketPair;
 }
+
 
 export {Vertex, Edge, Graph}

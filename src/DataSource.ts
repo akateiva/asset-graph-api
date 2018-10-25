@@ -31,6 +31,8 @@ export default class DataSource {
         },
       },
     }, {
+      $sort: {WriteDate: 1},
+    },{
       // Group by name and exchange. Place latest ticker in field ticker
       $group: {
         _id: {
@@ -51,10 +53,16 @@ export default class DataSource {
         BaseVolume: -1,
       },
     }]).limit(nMarkets).toArray() as IMarketTicker[];
-    console.log(result.length);
-    fs.writeFileSync("./market-states.json", JSON.stringify(result))
+    //fs.writeFileSync("./market-states.json", JSON.stringify(result))
     return result;
+  }
+
+  public subscribeToNewTickers(tickerHandler: ( ticker: IMarketTicker ) => void){
+    this.client.db('xlab-prices').collection('prices').watch([{$match : {"operationType" : "insert" }}])
+      .on("change", (change) => {
+        tickerHandler(change.fullDocument);
+      });
   }
 }
 
-
+//db.prices.createIndex({BaseCurrency:1, MarketCurrency: 1, WriteDate: 1, Exchange: 1}, { unique: true })
