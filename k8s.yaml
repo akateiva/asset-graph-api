@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asset-graph-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: asset-graph-api
+  template:
+    metadata:
+      labels:
+        app: asset-graph-api
+    spec:
+      containers:
+      - name: asset-graph-api
+        image: gcr.io/check4coin/asset-graph-api:master
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 4000
+        env:
+        - name: MONGO_URL
+          value: 'mongodb://mongo:27017'
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: asset-graph-api-web
+spec:
+  selector:
+    app: asset-graph-api
+  ports:
+  - name: web
+    port: 80
+    targetPort: 4000
+

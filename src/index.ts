@@ -11,7 +11,7 @@ async function main(){
   AssetGraphController.setDefaultGraph(graph);
   
   console.log('making data source')
-  const dataSource = new DataSource("mongodb://localhost:27017");
+  const dataSource = new DataSource();
   await dataSource.connect();
   console.log('getting latest tickers')
   const tickers = await dataSource.getLatestMarketTickers();
