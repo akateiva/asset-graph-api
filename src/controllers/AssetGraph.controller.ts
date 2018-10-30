@@ -3,71 +3,96 @@ import {
   Response
 } from 'express';
 import * as AssetGraph from '../models/AssetGraph';
-import * as ArbitrageSignal from "../models/ArbitrageSignal";
 
-var DEFAULT_GRAPH: AssetGraph.Graph;
-
-export function setDefaultGraph(graph: AssetGraph.Graph) {
-  DEFAULT_GRAPH = graph;
-}
-
-interface IGetArbitrageTrianglesResponse {
-  ok: boolean;
-  msg: string;
-  took: number;
-  cycles: {
-    rate: number;
-    trades: {
-      sell: string;
-      buy: string;
-      exchange: string;
-      lastPrice: number;
-      lastPriceDate: Date;
-    }[];
-  }[];
-}
-
-export function getArbitrageTriangles(req: Request, res: Response) {
-  const start = new Date();
-  const baseAsset = req.params.baseAsset;
-  var result: IGetArbitrageTrianglesResponse = {
-    ok: false,
-    msg: "",
-    cycles: [],
-    took: 0
-  };
-
-  const signals = ArbitrageSignal.getArbitrageTriangleSignals(DEFAULT_GRAPH, baseAsset);
-  result.ok = true;
-  result.cycles = signals.map((signal) => {
-    return {
-      rate: signal.rate,
-      trades: signal.transitions.map((transition) => {
-        return {
-          sell: transition.sell.asset.symbol,
-          buy: transition.buy.asset.symbol,
-          exchange: transition.marketPair.exchange,
-          lastPrice : NaN,
-          lastPriceDate: new Date()
-        }
-      })
+declare module ArbitrageSearchResult {
+    export interface Trade {
+        buy: string;
+        sell: string;
+        exchange: string;
+        unitLastPrice: number;
+        unitLastPriceDate: string;
+        relativeVolume: number;
     }
-  })
-  result.took = new Date().getTime() - start.getTime();
+
+    export interface Signal {
+        maxRate: number;
+        trades: Trade[];
+    }
+
+    export interface RootObject {
+        took: number;
+        timeExhausted: boolean;
+        signals: Signal[];
+    }
+}
+
+function getTransitionRate(...transitions: AssetGraph.ITransition[]): number{
+  let rate = 1;
+  for (let transition of transitions) {
+    let transitionRate: number;
+    if(transition.sell.asset === transition.marketPair.market){
+      transitionRate = transition.marketPair.bidPrice || transition.marketPair.basePrice;
+    }else{
+      transitionRate = 1 / ( transition.marketPair.askPrice || transition.marketPair.basePrice );
+    }
+    rate *= transitionRate; //* (1 - 0.0025);
+  }
+  return rate;
+}
+
+function makeSignal(...transitions: AssetGraph.ITransition[]): ArbitrageSearchResult.Signal {
+  const signal: ArbitrageSearchResult.Signal = transitions.reduceRight((signal, transition) => {
+    let transitionExchangeRate = getTransitionRate(transition);
+    const trade = {
+      buy: transition.buy.asset.symbol,
+      sell: transition.sell.asset.symbol,
+      exchange: transition.marketPair.exchange,
+      unitLastPrice: transitionExchangeRate,
+      unitLastPriceDate: transition.marketPair.date.toISOString(),
+      relativeVolume: transition.marketPair.baseVolume
+    };
+    signal.trades.unshift(trade);
+    signal.maxRate *= transitionExchangeRate;
+    return signal;
+  }, {maxRate: 1, trades:[] as ArbitrageSearchResult.Trade[]})
+
+  return signal;
+}
+
+
+// todo: write a test
+export function findArbitrageTriangles(req: Request, res: Response) {
+  const started = new Date(); // record when the request started
+  const baseAsset = req.params.baseAsset; // asset from which the cycle search will be performed
+  const timeoutMs = 200; // maximum time the search can run for
+  const signalRateThreshold = 1.0025; // minimum rate for a signal to be generated
+  const result: ArbitrageSearchResult.RootObject = {signals: [], took: NaN, timeExhausted: false};
+  if( !baseAsset ) throw new Error("no base asset provided");
+  const baseVertex = AssetGraph.Graph.getVertexByAsset({symbol: baseAsset});
+  if( !baseVertex ) throw new Error("no such asset in the graph");
+
+  var combinationsExplored = 0;
+  var timeExhausted = false;
+  var timeout = setTimeout(() => { timeExhausted = true }, timeoutMs);
+
+firstOrderLoop:
+  for(let firstOrderTransition of baseVertex.getTransitions().values()){
+    for(let secondOrderTransition of firstOrderTransition.buy.getTransitions().values()){
+      if(firstOrderTransition.sell === secondOrderTransition.buy) continue;
+      for(let thirdOrderTransition of secondOrderTransition.buy.getTransitions().values()){
+        combinationsExplored++;
+        if(firstOrderTransition.sell !== thirdOrderTransition.buy) continue;
+        if(timeExhausted) break firstOrderLoop;
+        let rate = getTransitionRate(firstOrderTransition, secondOrderTransition, thirdOrderTransition);
+        if(rate > signalRateThreshold){
+          result.signals.push(makeSignal(firstOrderTransition, secondOrderTransition, thirdOrderTransition));
+        }
+      }
+    }
+  }
+
+  result.took = new Date().getTime() - started.getTime();
+  result.timeExhausted = timeExhausted;
   res.json(result);
 }
 
-export function getExchangeRate(req: Request, res: Response){
-  /*
-  var result = {}
-  const sellCurrency = req.params.sell;
-  const buyCurrency = req.params.buy;
-
-  const sellVertex = DEFAULT_GRAPH.getVertexByAsset({symbol: sellCurrency});
-  const buyVertex = DEFAULT_GRAPH.getVertexByAsset({symbol: buyCurrency});
-  const shortestPath = DEFAULT_GRAPH.findShortestPath(sellVertex, buyVertex);
-  const rate = DEFAULT_GRAPH.getPathExchangeRate(shortestPath);
-
-  res.json({rate: rate})
-   */
-}

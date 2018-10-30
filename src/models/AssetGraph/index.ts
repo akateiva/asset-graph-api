@@ -1,3 +1,4 @@
+import * as mongodb from "../../util/mongo";
 import Vertex from "./Vertex";
 import Edge from "./Edge";
 import Graph from "./Graph";
@@ -44,5 +45,9 @@ export interface ITransition {
   marketPair: MarketPair;
 }
 
+const DEFAULT_GRAPH_INSTANCE = new Graph();
+mongodb.client.on('open', (client) => {
+  //TODO: parse tickers n shit
+})
 
-export {Vertex, Edge, Graph}
+export {Vertex, Edge, DEFAULT_GRAPH_INSTANCE as Graph};
