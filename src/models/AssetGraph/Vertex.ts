@@ -1,4 +1,4 @@
-import {Edge, Asset, ITransition} from './index';
+import {Asset, Edge, ITransition} from "./index";
 
 export default class Vertex {
   public asset: Asset;
@@ -13,15 +13,15 @@ export default class Vertex {
   }
 
   public getTransitions(): ITransition[] {
-    var transitions: ITransition[] = [];
-    for( let edge of this.edges){
-      for (let marketPair of edge.pairs.values()){
+    const transitions: ITransition[] = [];
+    for ( const edge of this.edges) {
+      for (const marketPair of edge.pairs.values()) {
         transitions.push({
           sell: this,
           buy: edge.end,
           edge,
-          marketPair
-        })
+          marketPair,
+        });
       }
     }
     return transitions;
@@ -45,5 +45,3 @@ export default class Vertex {
   }
    */
 }
-
-
