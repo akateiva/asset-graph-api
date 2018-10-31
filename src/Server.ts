@@ -1,5 +1,5 @@
 import express from "express";
-import { MongoClient } from "mongodb";
+import { MongoClient, ChangeStream } from "mongodb";
 import pino from "pino";
 import * as AssetGraphController from "./controllers/AssetGraph.controller";
 import * as AssetGraphModel from "./models/AssetGraph";
@@ -9,6 +9,7 @@ export default class Server {
   public app: express.Application;
   public log: pino.Logger;
   public mongoClient: MongoClient | null = null;
+  private changeStream: ChangeStream | null = null;
 
   constructor() {
     this.app = express();
@@ -18,7 +19,13 @@ export default class Server {
 
   public async listen(port: number) {
     this.mongoClient = await MongoClient.connect(config.get("MONGO_URL"), {useNewUrlParser: true});
-    AssetGraphModel.attachToMongo(this.mongoClient);
-    return await this.app.listen(port);
+    this.changeStream = await AssetGraphModel.attachToMongo(this.mongoClient);
+    const http = await this.app.listen(port);
+    return http;
+  }
+
+  public async shutdown() {
+    if (this.changeStream) { await this.changeStream!.close(); }
+    if (this.mongoClient) { await this.mongoClient.close(); }
   }
 }

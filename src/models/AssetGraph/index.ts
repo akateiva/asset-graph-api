@@ -91,14 +91,20 @@ export async function attachToMongo(client: MongoClient) {
 
   // Subscribe to new tickers
   logger.info("subscribing to ticker changes");
-  client.db("xlab-prices").collection("prices").watch([{
+  return client.db("xlab-prices").collection("prices").watch([{
       $match: {
         operationType: "insert",
       },
     }])
     .on("change", (change: any) => {
       DEFAULT_GRAPH_INSTANCE.processMarketTicker(change.fullDocument);
-    });
+    })
+    .on("close", () => {
+      console.log("closed");
+    })
+    .on("error", (err) => {
+      console.error(err)
+    })
 }
 
 const logger = Logger.child({
