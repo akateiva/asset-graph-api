@@ -1,8 +1,10 @@
 import Logger from "../../util/logger";
-import mongodb from "../../util/mongo";
 import Edge from "./Edge";
 import Graph from "./Graph";
 import Vertex from "./Vertex";
+import {
+  MongoClient
+} from "mongodb";
 
 export type AssetSymbol = string;
 
@@ -19,8 +21,8 @@ export interface MarketPair {
   base: Asset;
   market: Asset;
   basePrice: number;
-  bidPrice ?: number;
-  askPrice ?: number;
+  bidPrice ? : number;
+  askPrice ? : number;
   baseVolume: number;
   date: Date;
 }
@@ -46,9 +48,9 @@ export interface ITransition {
 }
 
 const DEFAULT_GRAPH_INSTANCE = new Graph();
-mongodb.on("open", async (client) => {
+export async function attachToMongo(client: MongoClient) {
   // Load data on connect
-  console.log("querying mongodb for latest market states");
+  logger.info("querying tickers from database");
   const collection = client.db("xlab-prices").collection("prices");
   const fiveMinutesAgo = new Date(new Date().getTime() - 5 * 60 * 1000 * 1000);
   const result = await collection.aggregate([{
@@ -66,8 +68,8 @@ mongodb.on("open", async (client) => {
     // Group by name and exchange. Place latest ticker in field ticker
     $group: {
       _id: {
-        Name: "$Name",
         Exchange: "$Exchange",
+        Name: "$Name",
       },
       ticker: {
         $last: "$$ROOT",
@@ -82,12 +84,13 @@ mongodb.on("open", async (client) => {
     $sort: {
       BaseVolume: -1,
     },
+    // @ts-ignore
   }]).forEach((ticker: IMarketTicker) => {
     DEFAULT_GRAPH_INSTANCE.processMarketTicker(ticker);
   });
 
   // Subscribe to new tickers
-  console.log("subscribing to ticker changes");
+  logger.info("subscribing to ticker changes");
   client.db("xlab-prices").collection("prices").watch([{
       $match: {
         operationType: "insert",
@@ -96,7 +99,7 @@ mongodb.on("open", async (client) => {
     .on("change", (change: any) => {
       DEFAULT_GRAPH_INSTANCE.processMarketTicker(change.fullDocument);
     });
-});
+}
 
 const logger = Logger.child({
   name: "AssetGraph",

@@ -1,11 +1,14 @@
-import * as AssetGraphController from "./controllers/AssetGraph.controller";
-import express from "express"
+import express from "express";
+import { MongoClient } from "mongodb";
 import pino from "pino";
-import mongodb from "./util/mongo";
+import * as AssetGraphController from "./controllers/AssetGraph.controller";
+import * as AssetGraphModel from "./models/AssetGraph";
+import config from "./util/config";
 
 export default class Server {
   public app: express.Application;
   public log: pino.Logger;
+  public mongoClient: MongoClient | null = null;
 
   constructor() {
     this.app = express();
@@ -14,7 +17,8 @@ export default class Server {
   }
 
   public async listen(port: number) {
-    await mongodb.connect();
+    this.mongoClient = await MongoClient.connect(config.get("MONGO_URL"), {useNewUrlParser: true});
+    AssetGraphModel.attachToMongo(this.mongoClient);
     return await this.app.listen(port);
   }
 }

@@ -3,8 +3,8 @@ const nconf = require("nconf");
 nconf.env();
 
 nconf.defaults({
+  LOGGING_LEVEL: "debug",
   MONGO_URL: "mongodb://localhost:27017",
-  LOGGING_LEVEL: "trace",
 });
 
 export default nconf;
