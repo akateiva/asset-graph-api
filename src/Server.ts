@@ -1,5 +1,5 @@
 import express from "express";
-import { MongoClient, ChangeStream } from "mongodb";
+import { ChangeStream, MongoClient } from "mongodb";
 import pino from "pino";
 import * as AssetGraphController from "./controllers/AssetGraph.controller";
 import * as AssetGraphModel from "./models/AssetGraph";
@@ -14,7 +14,7 @@ export default class Server {
   constructor() {
     this.app = express();
     this.log = pino();
-    this.app.get("/arbitrage/triangles/:baseAsset", AssetGraphController.findArbitrageTriangles);
+    this.setupRoutes();
   }
 
   public async listen(port: number) {
@@ -27,5 +27,10 @@ export default class Server {
   public async shutdown() {
     if (this.changeStream) { await this.changeStream!.close(); }
     if (this.mongoClient) { await this.mongoClient.close(); }
+  }
+
+  private setupRoutes() {
+    this.app.get("/cycles/search/:baseAsset", AssetGraphController.findCycles);
+    this.app.get("/cycles/:cycleId", AssetGraphController.getCycle);
   }
 }

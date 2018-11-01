@@ -1,10 +1,10 @@
+import {
+  MongoClient,
+} from "mongodb";
 import Logger from "../../util/logger";
 import Edge from "./Edge";
 import Graph from "./Graph";
 import Vertex from "./Vertex";
-import {
-  MongoClient
-} from "mongodb";
 
 export type AssetSymbol = string;
 
@@ -21,8 +21,8 @@ export interface MarketPair {
   base: Asset;
   market: Asset;
   basePrice: number;
-  bidPrice ? : number;
-  askPrice ? : number;
+  bidPrice ?: number;
+  askPrice ?: number;
   baseVolume: number;
   date: Date;
 }
@@ -103,8 +103,8 @@ export async function attachToMongo(client: MongoClient) {
       console.log("closed");
     })
     .on("error", (err) => {
-      console.error(err)
-    })
+      console.error(err);
+    });
 }
 
 const logger = Logger.child({

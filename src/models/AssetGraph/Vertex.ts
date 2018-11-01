@@ -15,14 +15,7 @@ export default class Vertex {
   public getTransitions(): ITransition[] {
     const transitions: ITransition[] = [];
     for ( const edge of this.edges) {
-      for (const marketPair of edge.pairs.values()) {
-        transitions.push({
-          sell: this,
-          buy: edge.end,
-          edge,
-          marketPair,
-        });
-      }
+      transitions.push(... edge.getTransitions());
     }
     return transitions;
   }

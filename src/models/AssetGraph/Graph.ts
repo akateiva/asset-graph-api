@@ -23,8 +23,12 @@ export default class Graph {
     return vertex;
   }
 
+  public getEdgeBySymbols(start: string, end: string): Edge | undefined {
+    return this.edges.get(start + "-" + end);
+  }
+
   public getEdge(start: Vertex, end: Vertex, upsert = false): Edge | undefined {
-    let edge = this.edges.get(start.asset.symbol + "-" + end.asset.symbol);
+    let edge = this.getEdgeBySymbols(start.asset.symbol, end.asset.symbol);
     if (!edge && upsert) {
       edge = new Edge(start, end);
       const reverseEdge = new Edge(end, start, edge.pairs);

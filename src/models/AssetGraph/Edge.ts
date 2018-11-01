@@ -1,4 +1,4 @@
-import {Exchange, IMarketTicker, MarketPair, Vertex} from "./index";
+import {Exchange, IMarketTicker, ITransition, MarketPair, Vertex} from "./index";
 
 export default class Edge {
   public start: Vertex;
@@ -45,5 +45,26 @@ export default class Edge {
       pair.baseVolume = newPair.baseVolume;
       pair.date = newPair.date;
     }
+  }
+
+  public getTransitions(): ITransition[] {
+    return Array.from(this.pairs.values()).map((marketPair) => {
+      return this.makeTransition(marketPair);
+    });
+  }
+
+  public getTransitionByExchange(exchange: string): ITransition | undefined {
+    const marketPair = this.pairs.get(exchange);
+    if (!marketPair) { return undefined; }
+    return this.makeTransition(marketPair);
+  }
+
+  private makeTransition(marketPair: MarketPair): ITransition {
+    return {
+      sell: this.start,
+      buy: this.end,
+      edge: this,
+      marketPair,
+    };
   }
 }
