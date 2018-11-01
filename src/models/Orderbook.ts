@@ -20,9 +20,8 @@ interface IOrderBook {
   asks: Array<[number, number]>; // ask array sorted in descending price [price, amount]
 }
 
-const exchangeModuleMap = new Map < string, IExchangeModule > ();
+const exchangeModuleMap = new Map < string, IExchangeModule | Promise <IExchangeModule> > ();
 
-// TODO: fix race condition
 async function getExchangeModuleForTransition(transition: ITransition): Promise < IExchangeModule > {
   let exchangeName = transition.marketPair.exchange.toLowerCase();
 
@@ -33,10 +32,13 @@ async function getExchangeModuleForTransition(transition: ITransition): Promise 
   if (!exchangeModule) {
     try {
       log.debug("getExchangeModuleForTransition: constructing new ccxt exchange module for %s", exchangeName);
-      // @ts-ignore
-      exchangeModule = new ccxt[exchangeName]() as IExchangeModule;
+      exchangeModule = (async () => {
+        // @ts-ignore
+        const ccxtModule = new ccxt[exchangeName]() as IExchangeModule;
+        await ccxtModule.loadMarkets();
+        return ccxtModule;
+      })();
       exchangeModuleMap.set(exchangeName, exchangeModule);
-      await exchangeModule.loadMarkets();
       log.debug("getExchangeModuleForTransition: markets loaded for %s", exchangeName);
     } catch (error) {
       log.error(error);
