@@ -100,10 +100,10 @@ export async function attachToMongo(client: MongoClient) {
       DEFAULT_GRAPH_INSTANCE.processMarketTicker(change.fullDocument);
     })
     .on("close", () => {
-      console.log("closed");
+      logger.info("changes stream closed");
     })
     .on("error", (err) => {
-      console.error(err);
+      logger.error(err, "changes stream error");
     });
 }
 

@@ -1,6 +1,7 @@
 import {
   Request,
   Response,
+  NextFunction,
 } from "express";
 import * as AssetGraph from "../models/AssetGraph";
 import * as Orderbook from "../models/Orderbook";
@@ -80,7 +81,7 @@ function deserializeCycle(id: string): AssetGraph.ITransition[] {
     }
     const transition = edge.getTransitionByExchange(exchange);
     if (!transition) {
-      throw new Error("could not find transition");
+      throw new Error(`could not find transition ${sellAssetSymbol} to ${buyAssetSymbol} via ${exchange} `);
     }
     transitions.push(transition);
   }
@@ -111,7 +112,7 @@ function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.
 }
 
 // todo: write a test
-export function findCycles(req: Request, res: Response) {
+export function findCycles(req: Request, res: Response, next: NextFunction) {
   const started = new Date(); // record when the request started
   const baseAsset = req.params.baseAsset; // asset from which the cycle search will be performed
   const timeoutMs = 200; // maximum time the search can run for
@@ -164,55 +165,84 @@ export function findCycles(req: Request, res: Response) {
   res.json(result);
 }
 
-function getOrdersInTransitionSellCurrency(transition: AssetGraph.ITransition, orderbook: IOrderBook, askOrBid: "ask"|"bid"): Array<[number, number]> {
-  let orders: Array<[number, number]>;
-  // order prices should be in transition.sell currency
-  if (askOrBid === "ask") {
-    // we are buying the market/selling base currency, and the orderbook contains prices in base currency
-    orders = orderbook.asks;
+function getOrdersInTransitionSellCurrency(orderbook: Orderbook.IOrderBook, askOrBid: "ask" | "bid"): Array < [number, number] > {
+  // orderbooks give price in base, amount in market by default
+  if (askOrBid === "bid") {
+    // price in market, order amount in base
+    return orderbook.bids;
   } else {
-    // we are buying the base currency/ selling market, so we want the prices to be in market currency
-    orders = orderbook.bids.map(([bidPrice, bidAmount]: [number, number]) => {
-      return [1 / bidPrice, bidAmount * bidPrice] as[number, number];
+    // price in base, order amount in market
+    return orderbook.asks.map(([price, amount]) => {
+      return [1 / price, amount * price] as [number, number];
     });
   }
-  return orders;
 }
 
-function computeTransitionRevenue(endownment: number, orders: Array<[number, number]> ): number {
+export function computeTransitionRevenue(endownment: number, orders: Array < [number, number] > ): number {
   let cost = 0;
-  let bought = 0;
+  let revenue = 0;
+  logger.debug("starting integrations");
   for (const order of orders) {
-    const amount = order[1];
-    const price = order[0];
-    const toBuy = endownment - bought;
-    if (toBuy > amount) {
-      cost += amount * price;
-      bought += amount;
+    const orderAmount = order[1];
+    const orderPrice = order[0];
+    const toSell = endownment - cost;
+    if (toSell > orderAmount) {
+      revenue += orderAmount * orderPrice;
+      cost += orderAmount;
     } else {
-      cost += toBuy * price;
-      bought += toBuy;
+      revenue += toSell * orderPrice;
+      cost += toSell;
+      logger.debug({toSell, orderPrice}, "one order is enough");
+      break;
     }
+    logger.debug({orderAmount, orderPrice, revenue, cost, nextToSell: endownment - cost}, "integration step");
   }
-  if (bought !== endownment) { throw new Error("not enough orders to support this buy"); }
-  return cost;
+  if (cost !== endownment) { revenue = NaN; }
+
+  return revenue;
 }
 
-export async function getCycle(req: Request, res: Response) {
-  const cycleId = req.params.cycleId;
-  if (!cycleId) {
-    throw new Error("no cycle id provided");
-  }
+function computeTotalRevenue(endownment: number, transitionsOrders: Array < Array < [number, number] >> ): number {
+  const totalRevenue = transitionsOrders.reduce((prevTransitionRevenue, marketOrderList) => {
+    const transitionRevenue = computeTransitionRevenue(prevTransitionRevenue, marketOrderList);
+    return transitionRevenue;
+  }, endownment);
+  return totalRevenue;
+}
 
+function sampleEndownments(transitionsOrders: Array < Array < [number, number] >> ) {
+  const endownments = [0.1, 0.2, 1, 5, 100, 1000];
+  return endownments.map((endownment) => {
+    let revenue;
+    try {
+      revenue = computeTotalRevenue(endownment, transitionsOrders);
+    } catch (e) {
+      revenue = NaN;
+    }
+    return {
+      endownment,
+      revenue,
+    };
+  });
+}
+
+export async function getCycle(req: Request, res: Response, next: NextFunction) {
   try {
+    const cycleId = req.params.cycleId;
+    if (!cycleId) {
+      throw new Error("no cycle id provided");
+    }
+
     const transitions = deserializeCycle(cycleId);
     const orderbooks = await Promise.all(transitions.map(Orderbook.getOrderbookForTransition));
-    logger.info(orderbooks, "got orderbooks my man");
-  } catch (e) {
-    logger.error(e);
-  }
+    const marketOrders = orderbooks.map(([orderbook, askOrBid], index) => {
+      return getOrdersInTransitionSellCurrency(orderbook, askOrBid);
+    });
+    const endownmentsAndRevenues = sampleEndownments(marketOrders);
 
-  // for every transition i should have a method to get the order book
-  // then i can have a method calculateCycleRevenue(endownment: number)
-  res.send("OK");
+    res.json({cycleId, endownmentsAndRevenues, marketOrders});
+    // magic number 1 = endownmnet
+  } catch (e) {
+    next(e);
+  }
 }

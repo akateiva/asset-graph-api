@@ -10,23 +10,26 @@ const log = Logger.child({
 
 interface IExchangeModule {
   test: () => void;
-  loadMarkets: () => Promise<void>;
+  loadMarkets: () => Promise < void > ;
   symbols: string[];
   fetchOrderBook: (marketSymbol: string) => Promise < IOrderBook > ;
 }
 
 export interface IOrderBook {
-  bids: Array<[number, number]>; // bid array sorted in ascending price [price,amount]
-  asks: Array<[number, number]>; // ask array sorted in descending price [price, amount]
+  bids: Array < [number, number] > ; // bid array sorted in ascending price [price,amount]
+  asks: Array < [number, number] > ; // ask array sorted in descending price [price, amount]
 }
 
-const exchangeModuleMap = new Map < string, IExchangeModule | Promise <IExchangeModule> > ();
+const exchangeModuleMap = new Map < string,
+  IExchangeModule | Promise < IExchangeModule > > ();
 
 async function getExchangeModuleForTransition(transition: ITransition): Promise < IExchangeModule > {
   let exchangeName = transition.marketPair.exchange.toLowerCase();
 
   // TODO: fix inconsistent exchange identifiers
-  if (exchangeName === "huobi") { exchangeName = "huobipro"; }
+  if (exchangeName === "huobi") {
+    exchangeName = "huobipro";
+  }
 
   let exchangeModule = exchangeModuleMap.get(exchangeName);
   if (!exchangeModule) {
@@ -50,16 +53,19 @@ async function getExchangeModuleForTransition(transition: ITransition): Promise 
 }
 
 function getMarketPairSymbolForTransition(transition: ITransition,
-                                          exchangeModule: IExchangeModule): [string, "ask" | "bid"] {
+  exchangeModule: IExchangeModule): [string, "ask" | "bid"] {
   let pair: string;
   let askOrBid: "ask" | "bid";
   let [buy, sell] = [transition.buy.asset.symbol, transition.sell.asset.symbol];
 
   // TODO: make sure bitfinex is usdt
-  if (buy === "USD" && transition.marketPair.exchange === "Bitfinex") { buy = "USDT"; }
-  if (sell === "USD" && transition.marketPair.exchange === "Bitfinex") { sell = "USDT"; }
+  if (buy === "USD" && transition.marketPair.exchange === "Bitfinex") {
+    buy = "USDT";
+  }
+  if (sell === "USD" && transition.marketPair.exchange === "Bitfinex") {
+    sell = "USDT";
+  }
 
-  log.info("get market pair symbol");
   if (exchangeModule.symbols.includes(buy + "/" + sell)) {
     pair = buy + "/" + sell;
     // ccxt keeps quote currency on the right side of a market pair symbol
@@ -72,6 +78,7 @@ function getMarketPairSymbolForTransition(transition: ITransition,
   } else {
     throw new Error(`failed to find a market pair for buy/sell ${buy}/${sell}`);
   }
+  log.debug({sell, buy, pair, askOrBid}, "getMarketPairSymbolForTransition");
   return [pair, askOrBid];
 }
 
