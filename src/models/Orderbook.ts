@@ -15,7 +15,7 @@ interface IExchangeModule {
   fetchOrderBook: (marketSymbol: string) => Promise < IOrderBook > ;
 }
 
-interface IOrderBook {
+export interface IOrderBook {
   bids: Array<[number, number]>; // bid array sorted in ascending price [price,amount]
   asks: Array<[number, number]>; // ask array sorted in descending price [price, amount]
 }
@@ -36,6 +36,7 @@ async function getExchangeModuleForTransition(transition: ITransition): Promise 
         // @ts-ignore
         const ccxtModule = new ccxt[exchangeName]() as IExchangeModule;
         await ccxtModule.loadMarkets();
+        exchangeModuleMap.set(exchangeName, ccxtModule);
         return ccxtModule;
       })();
       exchangeModuleMap.set(exchangeName, exchangeModule);

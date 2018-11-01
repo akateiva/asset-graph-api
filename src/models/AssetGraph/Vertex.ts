@@ -1,10 +1,10 @@
-import {Asset, Edge, ITransition} from "./index";
+import {IAsset, Edge, ITransition} from "./index";
 
 export default class Vertex {
-  public asset: Asset;
+  public asset: IAsset;
   public edges: Edge[] = [];
 
-  constructor(asset: Asset) {
+  constructor(asset: IAsset) {
     this.asset = asset;
   }
 

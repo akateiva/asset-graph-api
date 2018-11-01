@@ -1,15 +1,15 @@
-import {Exchange, IMarketTicker, ITransition, MarketPair, Vertex} from "./index";
+import {Exchange, IMarketTicker, ITransition, IMarketPair, Vertex} from "./index";
 
 export default class Edge {
   public start: Vertex;
   public end: Vertex;
-  public pairs: Map < Exchange, MarketPair >;
+  public pairs: Map < Exchange, IMarketPair >;
 
-  constructor(start: Vertex, end: Vertex, pairs?: Map <Exchange, MarketPair>) {
+  constructor(start: Vertex, end: Vertex, pairs?: Map <Exchange, IMarketPair>) {
     if (pairs) {
       this.pairs = pairs;
     } else {
-      this.pairs = new Map < Exchange, MarketPair >();
+      this.pairs = new Map < Exchange, IMarketPair >();
     }
     this.start = start;
     this.end = end;
@@ -35,7 +35,7 @@ export default class Edge {
     return numerator / denominator;
   }
 
-  public upsertMarketPair(newPair: MarketPair) {
+  public upsertMarketPair(newPair: IMarketPair) {
     let pair = this.pairs.get(newPair.exchange);
     if (!pair) {
       pair = newPair;
@@ -59,7 +59,7 @@ export default class Edge {
     return this.makeTransition(marketPair);
   }
 
-  private makeTransition(marketPair: MarketPair): ITransition {
+  private makeTransition(marketPair: IMarketPair): ITransition {
     return {
       sell: this.start,
       buy: this.end,

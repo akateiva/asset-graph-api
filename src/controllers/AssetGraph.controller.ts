@@ -11,7 +11,7 @@ const logger = Logger.child({
 });
 
 declare namespace CycleSearchResult {
-  export interface Trade {
+  export interface ITrade {
     buy: string;
     sell: string;
     exchange: string;
@@ -20,16 +20,16 @@ declare namespace CycleSearchResult {
     relativeVolume: number;
   }
 
-  export interface Cycle {
+  export interface ICycle {
     maxRate: number;
     id: string; // a unique identifier contains sell[n],exchange[n]
-    trades: Trade[];
+    trades: ITrade[];
   }
 
-  export interface RootObject {
+  export interface IRootObject {
     took: number;
     timeExhausted: boolean;
-    cycles: Cycle[];
+    cycles: ICycle[];
   }
 }
 
@@ -71,7 +71,11 @@ function deserializeCycle(id: string): AssetGraph.ITransition[] {
     const exchange = idComponents[i + 1];
     const edge = AssetGraph.Graph.getEdgeBySymbols(sellAssetSymbol, buyAssetSymbol);
     if (!edge) {
-      logger.error({sellAssetSymbol, buyAssetSymbol, exchange}, "could not find edge");
+      logger.error({
+        sellAssetSymbol,
+        buyAssetSymbol,
+        exchange,
+      }, "could not find edge");
       throw new Error("could not find edge");
     }
     const transition = edge.getTransitionByExchange(exchange);
@@ -83,8 +87,8 @@ function deserializeCycle(id: string): AssetGraph.ITransition[] {
   return transitions;
 }
 
-function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.Cycle {
-  const cycle: CycleSearchResult.Cycle = transitions.reduceRight((signal, transition) => {
+function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.ICycle {
+  const cycle: CycleSearchResult.ICycle = transitions.reduceRight((signal, transition) => {
     const transitionExchangeRate = getTransitionUnitCost(transition);
     const trade = {
       buy: transition.buy.asset.symbol,
@@ -98,7 +102,7 @@ function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.
     signal.maxRate *= transitionExchangeRate;
     return signal;
   }, {
-    trades: [] as CycleSearchResult.Trade[],
+    trades: [] as CycleSearchResult.ITrade[],
     id: serializeCycle(transitions),
     maxRate: 1,
   });
@@ -112,7 +116,7 @@ export function findCycles(req: Request, res: Response) {
   const baseAsset = req.params.baseAsset; // asset from which the cycle search will be performed
   const timeoutMs = 200; // maximum time the search can run for
   const signalRateThreshold = 1.01; // minimum rate for a signal to be generated; +1% in this case
-  const result: CycleSearchResult.RootObject = {
+  const result: CycleSearchResult.IRootObject = {
     cycles: [],
     took: NaN,
     timeExhausted: false,
@@ -160,6 +164,40 @@ export function findCycles(req: Request, res: Response) {
   res.json(result);
 }
 
+function getOrdersInTransitionSellCurrency(transition: AssetGraph.ITransition, orderbook: IOrderBook, askOrBid: "ask"|"bid"): Array<[number, number]> {
+  let orders: Array<[number, number]>;
+  // order prices should be in transition.sell currency
+  if (askOrBid === "ask") {
+    // we are buying the market/selling base currency, and the orderbook contains prices in base currency
+    orders = orderbook.asks;
+  } else {
+    // we are buying the base currency/ selling market, so we want the prices to be in market currency
+    orders = orderbook.bids.map(([bidPrice, bidAmount]: [number, number]) => {
+      return [1 / bidPrice, bidAmount * bidPrice] as[number, number];
+    });
+  }
+  return orders;
+}
+
+function computeTransitionRevenue(endownment: number, orders: Array<[number, number]> ): number {
+  let cost = 0;
+  let bought = 0;
+  for (const order of orders) {
+    const amount = order[1];
+    const price = order[0];
+    const toBuy = endownment - bought;
+    if (toBuy > amount) {
+      cost += amount * price;
+      bought += amount;
+    } else {
+      cost += toBuy * price;
+      bought += toBuy;
+    }
+  }
+  if (bought !== endownment) { throw new Error("not enough orders to support this buy"); }
+  return cost;
+}
+
 export async function getCycle(req: Request, res: Response) {
   const cycleId = req.params.cycleId;
   if (!cycleId) {
@@ -168,8 +206,7 @@ export async function getCycle(req: Request, res: Response) {
 
   try {
     const transitions = deserializeCycle(cycleId);
-    console.log(await Promise.all(transitions.map(async (transition) => Orderbook.getOrderbookForTransition(transition))));
-    // const orderbooks = await Promise.all(transitions.map(Orderbook.getOrderbookForTransition));
+    const orderbooks = await Promise.all(transitions.map(Orderbook.getOrderbookForTransition));
     logger.info(orderbooks, "got orderbooks my man");
   } catch (e) {
     logger.error(e);
