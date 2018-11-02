@@ -9,18 +9,18 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '--cache-from', 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME', '-t', 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA', '.']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['tag', 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA', '-t', 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME', '.']
+  args: ['tag', 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA', 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME']
 - name: 'gcr.io/cloud-builders/docker'
   args: ['run', 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA', 'npm', 't']
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA']
 - name: 'gcr.io/cloud-builders/kubectl'
+  entrypoint: 'bash'
   args:
-  - 'set'
-  - 'image'
-  - 'deployment'
-  - 'asset-graph-api'
-  - '[asset-graph-api]=gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA'
+  - '-c'
+  - |
+    [[ "$BRANCH_NAME" == "master" ]] && /builder/kubectl.bash set image deployment asset-graph-api [asset-graph-api]=gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA
+    || echo "not master. skipping deployment..."
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=europe-west4-a'
   - 'CLOUDSDK_CONTAINER_CLUSTER=cluster-1'
