@@ -9,7 +9,7 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '--cache-from', 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME', '-t', 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA', '.']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '--cache-from', 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME', '-t', 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME', '.']
+  args: ['tag', 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA', '-t', 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME', '.']
 - name: 'gcr.io/cloud-builders/docker'
   args: ['run', 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA', 'npm', 't']
 - name: 'gcr.io/cloud-builders/docker'
@@ -19,7 +19,7 @@ steps:
   - 'set'
   - 'image'
   - 'deployment'
-  - '$REPO_NAME'
+  - 'asset-graph-api'
   - '[asset-graph-api]=gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA'
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=europe-west4-a'
