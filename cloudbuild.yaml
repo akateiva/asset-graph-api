@@ -16,11 +16,11 @@ steps:
   args: ['push', 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA']
 - name: 'gcr.io/cloud-builders/kubectl'
   args:
-  - set
-  - image
-  - deployment
-  - $REPO_NAME
-  - [asset-graph-api]=gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA
+  - 'set'
+  - 'image'
+  - 'deployment'
+  - '$REPO_NAME'
+  - '[asset-graph-api]=gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA'
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=europe-west4-a'
   - 'CLOUDSDK_CONTAINER_CLUSTER=cluster-1'
