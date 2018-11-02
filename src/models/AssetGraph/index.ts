@@ -1,10 +1,10 @@
+import {
+  MongoClient,
+} from "mongodb";
 import Logger from "../../util/logger";
 import Edge from "./Edge";
 import Graph from "./Graph";
 import Vertex from "./Vertex";
-import {
-  MongoClient
-} from "mongodb";
 
 export type AssetSymbol = string;
 
@@ -12,17 +12,17 @@ export type Exchange = string;
 
 export type Path = Edge[];
 
-export interface Asset {
+export interface IAsset {
   symbol: AssetSymbol;
 }
 
-export interface MarketPair {
+export interface IMarketPair {
   exchange: Exchange;
-  base: Asset;
-  market: Asset;
+  base: IAsset;
+  market: IAsset;
   basePrice: number;
-  bidPrice ? : number;
-  askPrice ? : number;
+  bidPrice ?: number;
+  askPrice ?: number;
   baseVolume: number;
   date: Date;
 }
@@ -44,7 +44,7 @@ export interface ITransition {
   sell: Vertex;
   buy: Vertex;
   edge: Edge;
-  marketPair: MarketPair;
+  marketPair: IMarketPair;
 }
 
 const DEFAULT_GRAPH_INSTANCE = new Graph();
@@ -52,7 +52,7 @@ export async function attachToMongo(client: MongoClient) {
   // Load data on connect
   logger.info("querying tickers from database");
   const collection = client.db("xlab-prices").collection("prices");
-  const fiveMinutesAgo = new Date(new Date().getTime() - 5 * 60 * 1000 * 1000);
+  const fiveMinutesAgo = new Date(new Date().getTime() - 5 * 60 * 1000);
   const result = await collection.aggregate([{
     // Limit this query to prices from the last 5 minutes
     $match: {
@@ -100,11 +100,11 @@ export async function attachToMongo(client: MongoClient) {
       DEFAULT_GRAPH_INSTANCE.processMarketTicker(change.fullDocument);
     })
     .on("close", () => {
-      console.log("closed");
+      logger.info("changes stream closed");
     })
     .on("error", (err) => {
-      console.error(err)
-    })
+      logger.error(err, "changes stream error");
+    });
 }
 
 const logger = Logger.child({

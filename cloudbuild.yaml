@@ -3,6 +3,10 @@ steps:
   args: ['build', '-t', 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA', '.']
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-t', 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME', '.']
+- name: 'gcr.io/cloud-builders/npm'
+  args: ['run', 'lint']
+- name: 'gcr.io/cloud-builders/npm'
+  args: ['run', 'test']
 images:
 - 'gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA'
 - 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME'

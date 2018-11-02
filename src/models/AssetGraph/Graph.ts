@@ -1,10 +1,10 @@
 import {
-  Asset,
+  IAsset,
   AssetSymbol,
   Edge,
   IMarketTicker,
   Logger,
-  MarketPair,
+  IMarketPair,
   Path,
   Vertex,
 } from "./index";
@@ -13,7 +13,7 @@ export default class Graph {
   private vertices: Map < AssetSymbol, Vertex > = new Map < AssetSymbol, Vertex > ();
   private edges: Map < string, Edge > = new Map < string, Edge > ();
 
-  public getVertexByAsset(asset: Asset, upsert = false): Vertex | undefined {
+  public getVertexByAsset(asset: IAsset, upsert = false): Vertex | undefined {
     let vertex = this.vertices.get(asset.symbol);
     if (!vertex && upsert) {
       vertex = new Vertex(asset);
@@ -23,8 +23,12 @@ export default class Graph {
     return vertex;
   }
 
+  public getEdgeBySymbols(start: string, end: string): Edge | undefined {
+    return this.edges.get(start + "-" + end);
+  }
+
   public getEdge(start: Vertex, end: Vertex, upsert = false): Edge | undefined {
-    let edge = this.edges.get(start.asset.symbol + "-" + end.asset.symbol);
+    let edge = this.getEdgeBySymbols(start.asset.symbol, end.asset.symbol);
     if (!edge && upsert) {
       edge = new Edge(start, end);
       const reverseEdge = new Edge(end, start, edge.pairs);
