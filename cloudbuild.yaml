@@ -19,8 +19,7 @@ steps:
   args:
   - '-c'
   - |
-    [[ "$BRANCH_NAME" == "master" ]] && /builder/kubectl.bash set image deployment asset-graph-api [asset-graph-api]=gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA
-    || echo "not master. skipping deployment..."
+    [[ "$BRANCH_NAME" == "master" ]] && /builder/kubectl.bash set image deployment asset-graph-api asset-graph-api=gcr.io/$PROJECT_ID/$REPO_NAME:$SHORT_SHA || echo "not master. skipping deployment..."
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=europe-west4-a'
   - 'CLOUDSDK_CONTAINER_CLUSTER=cluster-1'
