@@ -1,4 +1,4 @@
-//.const nconf = require("nconf");
+// .const nconf = require("nconf");
 import nconf from "nconf";
 // use env variables
 nconf.env();

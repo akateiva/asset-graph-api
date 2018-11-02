@@ -46,8 +46,8 @@ test("selling 3 BTC on an insufficient orderbook should return null", () => {
 });
 
 test("selling 5400 USD for 1 BTC with ask order", () => {
-  //ASK orderbook format
-  const orders = [ [1/5400, 2*5400] ] as Array<[number, number]>;
+  // ASK orderbook format
+  const orders = [ [1 / 5400, 2 * 5400] ] as Array<[number, number]>;
   const result = computeTransitionRevenue(5400, orders);
   expect(result).toBe(1);
 });

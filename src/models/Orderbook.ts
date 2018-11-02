@@ -53,7 +53,7 @@ async function getExchangeModuleForTransition(transition: ITransition): Promise 
 }
 
 function getMarketPairSymbolForTransition(transition: ITransition,
-  exchangeModule: IExchangeModule): [string, "ask" | "bid"] {
+                                          exchangeModule: IExchangeModule): [string, "ask" | "bid"] {
   let pair: string;
   let askOrBid: "ask" | "bid";
   let [buy, sell] = [transition.buy.asset.symbol, transition.sell.asset.symbol];
