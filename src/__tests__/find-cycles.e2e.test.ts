@@ -29,8 +29,17 @@ async function setupServer(): Promise<Server> {
   }
 }
 
-beforeAll(setupServer, 60 * 1000);
-afterAll(() => mongod.stop());
+async function teardownServer(): Promise<void> {
+  try {
+    await mongod.stop();
+    await httpServer.close();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+beforeAll(setupServer, 5 * 1000);
+afterAll(teardownServer, 5 * 1000);
 
 describe("GET /cycles/search", () => {
   it("returns correct arbitrage cycle for EUR-LTL-USD-EUR fixture", async () => {
