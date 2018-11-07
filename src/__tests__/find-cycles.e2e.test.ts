@@ -1,21 +1,36 @@
-import * as mongoUnit from "mongo-unit";
 import Server from "../Server";
 import request from "supertest";
 import TICKER_TEST_FIXTURE from "./__fixtures__/EUR-LTL-USD-tickers";
+import MongoMemoryServer from "mongodb-memory-server";
+import {MongoClient} from "mongodb";
 
 let server: Server;
 let httpServer: any;
+const mongod = new MongoMemoryServer({instance: {dbName: "xlab-prices"}});
 
-async function setupServer(): Promise<Server> {
-  const mongoUrl = await mongoUnit.start({dbName: "xlab-prices"});
-  await mongoUnit.load(TICKER_TEST_FIXTURE);
-  server = new Server({MONGO_URL: mongoUrl, useChangeStream: false});
-  httpServer = await server.listen(0);
-  return server;
+async function insertFixtureIntoDatabase(connectionString: string): Promise<void> {
+  console.log("starting to write fixtures");
+  const client = new MongoClient(connectionString, {useNewUrlParser: false});
+  await client.connect();
+  await client.db("xlab-prices").collection("prices").insertMany(TICKER_TEST_FIXTURE.prices);
+  console.log("fixtures inserted");
 }
 
-beforeAll(setupServer, 30 * 1000);
-afterAll(() => mongoUnit.stop().then(httpServer.close()));
+async function setupServer(): Promise<Server> {
+  try {
+    const mongoUrl = await mongod.getConnectionString();
+    await insertFixtureIntoDatabase(mongoUrl);
+    server = new Server({MONGO_URL: mongoUrl, useChangeStream: false});
+    httpServer = await server.listen(0);
+    return server;
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+}
+
+beforeAll(setupServer, 60 * 1000);
+afterAll(() => mongod.stop());
 
 describe("GET /cycles/search", () => {
   it("returns correct arbitrage cycle for EUR-LTL-USD-EUR fixture", async () => {
