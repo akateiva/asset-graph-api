@@ -10,18 +10,27 @@ export default class Server {
   public log: pino.Logger;
   public mongoClient: MongoClient | null = null;
   private changeStream: ChangeStream | null = null;
+  private useChangeStream: boolean;
+  private mongoUrl: string;
+  private httpServer: any;
 
-  constructor() {
+  constructor(opts: {MONGO_URL?: string, useChangeStream?: boolean} = {}) {
+    this.useChangeStream = opts.useChangeStream || false;
+    this.mongoUrl = opts.MONGO_URL || config.get("MONGO_URL");
     this.app = express();
     this.log = pino();
     this.setupRoutes();
   }
 
   public async listen(port: number) {
-    this.mongoClient = await MongoClient.connect(config.get("MONGO_URL"), {useNewUrlParser: true});
-    this.changeStream = await AssetGraphModel.attachToMongo(this.mongoClient);
-    const http = await this.app.listen(port);
-    return http;
+    this.log.info("listen: connecting to mongodb");
+    this.mongoClient = await MongoClient.connect(this.mongoUrl, {useNewUrlParser: true});
+    this.log.info("listen: attaching asset graph model to mongodb, useChangeStream: %b", this.useChangeStream);
+    this.changeStream = await AssetGraphModel.attachToMongo(this.mongoClient, this.useChangeStream);
+    this.log.info("listen: starting http server on port %d", port);
+    this.httpServer = await this.app.listen(port);
+    this.log.info("listen: listening on %j", this.httpServer.address());
+    return this.httpServer;
   }
 
   public async shutdown() {

@@ -57,7 +57,7 @@ function serializeCycle(transitions: AssetGraph.ITransition[]): string {
   return transitions.reduce((identifierString, transition) => {
     identifierString += `${transition.sell.asset.symbol},${transition.marketPair.exchange},`;
     return identifierString;
-  }, "");
+  }, "").slice(0, -1);
 }
 
 function deserializeCycle(id: string): AssetGraph.ITransition[] {
