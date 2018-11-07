@@ -48,7 +48,7 @@ export interface ITransition {
 }
 
 const DEFAULT_GRAPH_INSTANCE = new Graph();
-export async function attachToMongo(client: MongoClient) {
+export async function attachToMongo(client: MongoClient, useChangeStream: boolean) {
   // Load data on connect
   logger.info("querying tickers from database");
   const collection = client.db("xlab-prices").collection("prices");
@@ -89,22 +89,25 @@ export async function attachToMongo(client: MongoClient) {
     DEFAULT_GRAPH_INSTANCE.processMarketTicker(ticker);
   });
 
+  if (useChangeStream) {
   // Subscribe to new tickers
-  logger.info("subscribing to ticker changes");
-  return client.db("xlab-prices").collection("prices").watch([{
-      $match: {
-        operationType: "insert",
-      },
-    }])
-    .on("change", (change: any) => {
-      DEFAULT_GRAPH_INSTANCE.processMarketTicker(change.fullDocument);
-    })
-    .on("close", () => {
-      logger.info("changes stream closed");
-    })
-    .on("error", (err) => {
-      logger.error(err, "changes stream error");
-    });
+    logger.info("subscribing to ticker changes");
+    return client.db("xlab-prices").collection("prices").watch([{
+        $match: {
+          operationType: "insert",
+        },
+      }])
+      .on("change", (change: any) => {
+        DEFAULT_GRAPH_INSTANCE.processMarketTicker(change.fullDocument);
+      })
+      .on("close", () => {
+        logger.info("changes stream closed");
+      })
+      .on("error", (err) => {
+        logger.error(err, "changes stream error");
+      });
+  }
+  return null;
 }
 
 const logger = Logger.child({

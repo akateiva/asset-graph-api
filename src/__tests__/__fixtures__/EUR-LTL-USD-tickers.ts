@@ -1,0 +1,36 @@
+const prices = [{
+    Name : "EUR-LTL",
+    Last : 0.3,
+    BaseVolume : 50,
+    ReceivedOn : new Date(),
+    MarketCurrency : "LTL",
+    BaseCurrency : "EUR",
+    Exchange : "Exchange 1",
+    Ask : 0.3,
+    Bid : 0.3,
+    WriteDate : new Date(),
+}, {
+    Name : "USD-LTL",
+    Last : 0.33,
+    BaseVolume : 50,
+    ReceivedOn : new Date(),
+    MarketCurrency : "LTL",
+    BaseCurrency : "USD",
+    Exchange : "Exchange 2",
+    Ask : 0.33,
+    Bid : 0.33,
+    WriteDate : new Date(),
+}, {
+    Name : "USD-EUR",
+    Last : 0.88,
+    BaseVolume : 50,
+    ReceivedOn : new Date(),
+    MarketCurrency : "EUR",
+    BaseCurrency : "USD",
+    Exchange : "Exchange 3",
+    Ask : 0.88,
+    Bid : 0.88,
+    WriteDate : new Date(),
+}];
+
+export default {prices};
