@@ -1,6 +1,7 @@
 import express from "express";
 import { ChangeStream, MongoClient } from "mongodb";
 import pino from "pino";
+import pinoHttp from "pino-http";
 import * as AssetGraphController from "./controllers/AssetGraph.controller";
 import * as AssetGraphModel from "./models/AssetGraph";
 import config from "./util/config";
@@ -19,7 +20,12 @@ export default class Server {
     this.mongoUrl = opts.MONGO_URL || config.get("MONGO_URL");
     this.app = express();
     this.log = pino();
+    this.app.use(pinoHttp({logger: this.log}));
     this.setupRoutes();
+    this.app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+      req.log.error(err, "error processing a request");
+      res.status(500).send("Something broke!");
+    });
   }
 
   public async listen(port: number) {

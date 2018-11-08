@@ -18,7 +18,9 @@
     "@types/mongodb": "^3.1.12",
     "@types/nconf": "0.0.37",
     "@types/pino": "^5.6.1",
+    "@types/pino-http": "^4.0.0",
     "@types/supertest": "^2.0.6",
+    "express-pino-logger": "^4.0.0",
     "jest": "^23.6.0",
     "mongodb-memory-server": "^2.7.0",
     "pino-pretty": "^2.2.3",
@@ -35,6 +37,7 @@
     "express": "^4.16.4",
     "mongodb": "^3.1.8",
     "nconf": "^0.10.0",
-    "pino": "^5.8.0"
+    "pino": "^5.8.0",
+    "pino-http": "^4.0.0"
   }
 }
