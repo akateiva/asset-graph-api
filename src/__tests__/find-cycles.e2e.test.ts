@@ -56,7 +56,7 @@ describe("GET /cycles/search", () => {
       relativeVolume : 50,
       //unitLastPriceDate: new Date(),
     }));
-    expect(result.body.cycles[0].trades[0].unitLastPrice).toBeCloseTo(3.33333333, 8);
+    expect(result.body.cycles[0].trades[0].unitLastPrice).toBeCloseTo(3.33333333, 8); // Checks up to the eighth digit
     expect(result.body.cycles[0].trades[1]).toEqual(expect.objectContaining({
       sell: "LTL",
       buy: "USD",
@@ -72,6 +72,6 @@ describe("GET /cycles/search", () => {
       relativeVolume : 50,
       //unitLastPriceDate: new Date(),
     }));
-    expect(result.body.cycles[0].trades[2].unitLastPrice).toBeCloseTo(1.136363636, 8);
+    expect(result.body.cycles[0].trades[2].unitLastPrice).toBeCloseTo(1.136363636, 8); // Checks up to the eighth digit
   });
 });
