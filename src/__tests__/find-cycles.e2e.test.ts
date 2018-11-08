@@ -38,8 +38,8 @@ async function teardownServer(): Promise<void> {
   }
 }
 
-beforeAll(setupServer, 5 * 1000);
-afterAll(teardownServer, 5 * 1000);
+beforeAll(setupServer, 10 * 1000);
+afterAll(teardownServer, 10 * 1000);
 
 describe("GET /cycles/search", () => {
   it("returns correct arbitrage cycle for EUR-LTL-USD-EUR fixture", async () => {
@@ -53,16 +53,25 @@ describe("GET /cycles/search", () => {
       sell: "EUR",
       buy: "LTL",
       exchange: "Exchange 1",
+      relativeVolume : 50,
+      //unitLastPriceDate: new Date(),
     }));
+    expect(result.body.cycles[0].trades[0].unitLastPrice).toBeCloseTo(3.33333333, 8);
     expect(result.body.cycles[0].trades[1]).toEqual(expect.objectContaining({
       sell: "LTL",
       buy: "USD",
       exchange: "Exchange 2",
+      relativeVolume : 50,
+      unitLastPrice: 0.33,
+      //unitLastPriceDate: new Date(),
     }));
     expect(result.body.cycles[0].trades[2]).toEqual(expect.objectContaining({
       sell: "USD",
       buy: "EUR",
       exchange: "Exchange 3",
+      relativeVolume : 50,
+      //unitLastPriceDate: new Date(),
     }));
+    expect(result.body.cycles[0].trades[2].unitLastPrice).toBeCloseTo(1.136363636, 8);
   });
 });
