@@ -53,7 +53,7 @@ const prices = [{
     Ask : 1,
     Bid : 1,
     WriteDate : new Date(),
-}
+},
 
 ];
 

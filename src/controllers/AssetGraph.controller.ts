@@ -34,25 +34,6 @@ declare namespace CycleSearchResult {
   }
 }
 
-// returns the cost of a transition based on last/ask/bid ticker price
-// 1 BUY_CURRENCY costs X SELL_CURRENCY
-function getTransitionUnitCost(...transitions: AssetGraph.ITransition[]): number {
-  let rate = 1;
-  for (const transition of transitions) {
-    let transitionRate: number;
-    // selling market / buying base = asks
-    if (transition.sell.asset === transition.marketPair.market) {
-      transitionRate = transition.marketPair.bidPrice || transition.marketPair.basePrice;
-    } else {
-      // selling market / buying base = bids
-      // invert, because the cost has to be in sell currency
-      transitionRate = 1 / (transition.marketPair.askPrice || transition.marketPair.basePrice);
-    }
-    rate *= transitionRate; // * (1 - 0.0025);
-  }
-  return rate;
-}
-
 function serializeCycle(transitions: AssetGraph.ITransition[]): string {
   return transitions.reduce((identifierString, transition) => {
     identifierString += `${transition.sell.asset.symbol},${transition.marketPair.exchange},`;
@@ -72,11 +53,7 @@ function deserializeCycle(id: string): AssetGraph.ITransition[] {
     const exchange = idComponents[i + 1];
     const edge = AssetGraph.Graph.getEdgeBySymbols(sellAssetSymbol, buyAssetSymbol);
     if (!edge) {
-      logger.error({
-        sellAssetSymbol,
-        buyAssetSymbol,
-        exchange,
-      }, "could not find edge");
+      logger.error({ sellAssetSymbol, buyAssetSymbol, exchange}, "could not find edge");
       throw new Error("could not find edge");
     }
     const transition = edge.getTransitionByExchange(exchange);
@@ -89,18 +66,18 @@ function deserializeCycle(id: string): AssetGraph.ITransition[] {
 }
 
 function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.ICycle {
-  const cycle: CycleSearchResult.ICycle = transitions.reduceRight((signal, transition) => {
-    const transitionExchangeRate = getTransitionUnitCost(transition);
+  const cycle: CycleSearchResult.ICycle = transitions.reduce((signal, transition) => {
     const trade = {
       buy: transition.buy.asset.symbol,
       sell: transition.sell.asset.symbol,
       exchange: transition.marketPair.exchange,
-      unitLastPrice: transitionExchangeRate,
+      unitLastPrice: transition.unitCost,
+      volumeInSellCurrency: transition.volumeInSellCurrency,
       unitLastPriceDate: transition.marketPair.date.toISOString(),
       relativeVolume: transition.marketPair.baseVolume,
     };
-    signal.trades.unshift(trade);
-    signal.maxRate *= transitionExchangeRate;
+    signal.trades.push(trade);
+    signal.maxRate *= trade.unitLastPrice;
     return signal;
   }, {
     trades: [] as CycleSearchResult.ITrade[],
@@ -111,26 +88,29 @@ function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.
   return cycle;
 }
 
+export function candidateTransitionFilter(previousTransitions: AssetGraph.ITransition[],
+                                          e: AssetGraph.Edge,
+                                          m: AssetGraph.IMarketPair) {
+  console.log("hi");
+}
+
 // todo: write a test
+// TODO: validate input
 export function findCycles(req: Request, res: Response, next: NextFunction) {
   const started = new Date(); // record when the request started
   const baseAsset = req.params.baseAsset; // asset from which the cycle search will be performed
   const timeoutMs = 200; // maximum time the search can run for
   const signalRateThreshold = 1.01; // minimum rate for a signal to be generated; +1% in this case
+  const size = 100; // the maximum number of cycles to return
+  //const exchangeFilter: string[] = req.query.exchanges.split(',') || undefined;
   const result: CycleSearchResult.IRootObject = {
     cycles: [],
     took: NaN,
     timeExhausted: false,
   };
-  if (!baseAsset) {
-    throw new Error("no base asset provided");
-  }
-  const baseVertex = AssetGraph.Graph.getVertexByAsset({
-    symbol: baseAsset,
-  });
-  if (!baseVertex) {
-    throw new Error("no such asset in the graph");
-  }
+  if (!baseAsset) { throw new Error("no base asset provided"); }
+  const baseVertex = AssetGraph.Graph.getVertexByAsset({symbol: baseAsset});
+  if (!baseVertex) { throw new Error("no such asset in the graph"); }
 
   let combinationsExplored = 0;
   let timeExhausted = false;
@@ -149,12 +129,12 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
           if (firstOrderTransition.sell !== thirdOrderTransition.buy) {
             continue;
           }
-          if (timeExhausted) {
-            break firstOrderLoop;
-          }
-          const rate = getTransitionUnitCost(firstOrderTransition, secondOrderTransition, thirdOrderTransition);
+          const rate = firstOrderTransition.unitCost * secondOrderTransition.unitCost * thirdOrderTransition.unitCost;
           if (rate > signalRateThreshold) {
             result.cycles.push(makeCycle(firstOrderTransition, secondOrderTransition, thirdOrderTransition));
+          }
+          if (timeExhausted || result.cycles.length >= size) {
+            break firstOrderLoop;
           }
         }
       }
@@ -163,19 +143,6 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
   result.took = new Date().getTime() - started.getTime();
   result.timeExhausted = timeExhausted;
   res.json(result);
-}
-
-function getOrdersInTransitionSellCurrency(orderbook: Orderbook.IOrderBook, askOrBid: "ask" | "bid"): Array < [number, number] > {
-  // orderbooks give price in base, amount in market by default
-  if (askOrBid === "bid") {
-    // price in market, order amount in base
-    return orderbook.bids;
-  } else {
-    // price in base, order amount in market
-    return orderbook.asks.map(([price, amount]) => {
-      return [1 / price, amount * price] as [number, number];
-    });
-  }
 }
 
 export function computeTransitionRevenue(endownment: number, orders: Array < [number, number] > ): number {
@@ -234,9 +201,16 @@ export async function getCycle(req: Request, res: Response, next: NextFunction) 
     }
 
     const transitions = deserializeCycle(cycleId);
-    const orderbooks = await Promise.all(transitions.map(Orderbook.getOrderbookForTransition));
-    const marketOrders = orderbooks.map(([orderbook, askOrBid], index) => {
-      return getOrdersInTransitionSellCurrency(orderbook, askOrBid);
+    const orderbooks = await Promise.all(transitions.map((t) => {
+      return Orderbook.getOrderbookForTransition(t).then((r) => r[0]);
+    }));
+    const marketOrders = orderbooks.map((orderbook, index) => {
+      const transition = transitions[index];
+      if (transition.positionType === "short") {
+        return orderbook.bids;
+      } else {
+        return orderbook.asks.map(([price, amount]) => [1 / price, amount * price] as [number, number]);
+      }
     });
     const endownmentsAndRevenues = sampleEndownments(marketOrders);
 

@@ -44,6 +44,8 @@ afterAll(teardownServer, 10 * 1000);
 describe("GET /cycles/search", () => {
   it("returns correct arbitrage cycle for EUR-LTL-USD-EUR fixture", async () => {
     const result = await request(httpServer).get("/cycles/search/EUR");
+    console.log(result.body);
+    console.log(result.body.cycles[0].trades);
     expect(result.status).toBe(200);
     expect(result.body.timeExhausted).toBe(false);
     expect(result.body.took).toBeGreaterThan(0);
@@ -54,7 +56,7 @@ describe("GET /cycles/search", () => {
       buy: "LTL",
       exchange: "Exchange 1",
       relativeVolume : 50,
-      //unitLastPriceDate: new Date(),
+      // unitLastPriceDate: new Date(),
     }));
     expect(result.body.cycles[0].trades[0].unitLastPrice).toBeCloseTo(3.33333333, 8); // Checks up to the eighth digit
     expect(result.body.cycles[0].trades[1]).toEqual(expect.objectContaining({
@@ -63,14 +65,14 @@ describe("GET /cycles/search", () => {
       exchange: "Exchange 2",
       relativeVolume : 50,
       unitLastPrice: 0.33,
-      //unitLastPriceDate: new Date(),
+      // unitLastPriceDate: new Date(),
     }));
     expect(result.body.cycles[0].trades[2]).toEqual(expect.objectContaining({
       sell: "USD",
       buy: "EUR",
       exchange: "Exchange 3",
       relativeVolume : 50,
-      //unitLastPriceDate: new Date(),
+      // unitLastPriceDate: new Date(),
     }));
     expect(result.body.cycles[0].trades[2].unitLastPrice).toBeCloseTo(1.136363636, 8); // Checks up to the eighth digit
   });
