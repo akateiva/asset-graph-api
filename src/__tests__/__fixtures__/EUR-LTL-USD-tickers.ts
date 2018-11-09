@@ -12,7 +12,7 @@ const prices = [{
 }, {
     Name : "USD-LTL",
     Last : 0.33,
-    BaseVolume : 50,
+    BaseVolume : 5000,
     ReceivedOn : new Date(),
     MarketCurrency : "LTL",
     BaseCurrency : "USD",

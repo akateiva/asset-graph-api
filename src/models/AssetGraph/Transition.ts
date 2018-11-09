@@ -21,7 +21,7 @@ export default class Transition implements ITransition {
 
   get volumeInSellCurrency(): number {
     if ( this.positionType === "short" ) {
-      return this.marketPair.baseVolume * this.unitCost;
+      return this.marketPair.baseVolume / this.unitCost;
     } else {
       return this.marketPair.baseVolume;
     }

@@ -55,7 +55,7 @@ describe("GET /cycles/search", () => {
       sell: "EUR",
       buy: "LTL",
       exchange: "Exchange 1",
-      relativeVolume : 50,
+      relativeVolume : 50, //EUR
       // unitLastPriceDate: new Date(),
     }));
     expect(result.body.cycles[0].trades[0].unitLastPrice).toBeCloseTo(3.33333333, 8); // Checks up to the eighth digit
@@ -63,7 +63,7 @@ describe("GET /cycles/search", () => {
       sell: "LTL",
       buy: "USD",
       exchange: "Exchange 2",
-      relativeVolume : 50,
+      relativeVolume : 4545.454545454545, // EUR
       unitLastPrice: 0.33,
       // unitLastPriceDate: new Date(),
     }));
@@ -71,7 +71,7 @@ describe("GET /cycles/search", () => {
       sell: "USD",
       buy: "EUR",
       exchange: "Exchange 3",
-      relativeVolume : 50,
+      relativeVolume : 45.45454545454545, // EUR
       // unitLastPriceDate: new Date(),
     }));
     expect(result.body.cycles[0].trades[2].unitLastPrice).toBeCloseTo(1.136363636, 8); // Checks up to the eighth digit

@@ -33,7 +33,7 @@ describe("computes the correct transition cost, volume in sell currency and posi
     const transition = edge!.getTransitionByExchange(fixture.Exchange);
     expect(transition!.positionType).toBe("short");
     expect(transition!.unitCost).toBe(fixture.Bid);
-    expect(transition!.volumeInSellCurrency).toBe(fixture.Bid * fixture.BaseVolume);
+    expect(transition!.volumeInSellCurrency).toBe(fixture.BaseVolume / fixture.Bid);
   });
 
 });

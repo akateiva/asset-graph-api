@@ -66,7 +66,7 @@ function deserializeCycle(id: string): AssetGraph.ITransition[] {
 }
 
 function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.ICycle {
-  const cycle: CycleSearchResult.ICycle = transitions.reduce((signal, transition) => {
+  const cycle: CycleSearchResult.ICycle = transitions.reduce((signal, transition, transitionIndex) => {
     const trade = {
       buy: transition.buy.asset.symbol,
       sell: transition.sell.asset.symbol,
@@ -74,7 +74,7 @@ function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.
       unitLastPrice: transition.unitCost,
       volumeInSellCurrency: transition.volumeInSellCurrency,
       unitLastPriceDate: transition.marketPair.date.toISOString(),
-      relativeVolume: transition.marketPair.baseVolume,
+      relativeVolume: transition.volumeInSellCurrency / signal.maxRate,
     };
     signal.trades.push(trade);
     signal.maxRate *= trade.unitLastPrice;
