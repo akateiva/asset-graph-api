@@ -40,13 +40,13 @@ function getTransitionUnitCost(...transitions: AssetGraph.ITransition[]): number
   let rate = 1;
   for (const transition of transitions) {
     let transitionRate: number;
-    // selling base / buying market = asks
+    // selling market / buying base = asks
     if (transition.sell.asset === transition.marketPair.market) {
-      transitionRate = transition.marketPair.askPrice || transition.marketPair.basePrice;
+      transitionRate = transition.marketPair.bidPrice || transition.marketPair.basePrice;
     } else {
       // selling market / buying base = bids
       // invert, because the cost has to be in sell currency
-      transitionRate = 1 / (transition.marketPair.bidPrice || transition.marketPair.basePrice);
+      transitionRate = 1 / (transition.marketPair.askPrice || transition.marketPair.basePrice);
     }
     rate *= transitionRate; // * (1 - 0.0025);
   }

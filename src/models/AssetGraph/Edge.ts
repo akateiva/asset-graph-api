@@ -1,4 +1,4 @@
-import {Exchange, IMarketTicker, ITransition, IMarketPair, Vertex} from "./index";
+import {Exchange, IMarketTicker, ITransition, IMarketPair, Vertex, Transition} from "./index";
 
 export default class Edge {
   public start: Vertex;
@@ -60,11 +60,6 @@ export default class Edge {
   }
 
   private makeTransition(marketPair: IMarketPair): ITransition {
-    return {
-      sell: this.start,
-      buy: this.end,
-      edge: this,
-      marketPair,
-    };
+    return new Transition(this.start, this.end, this, marketPair);
   }
 }

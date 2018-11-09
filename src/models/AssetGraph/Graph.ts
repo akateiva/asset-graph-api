@@ -64,6 +64,8 @@ export default class Graph {
       baseVolume: ticker.BaseVolume,
       exchange: ticker.Exchange,
       date: ticker.WriteDate,
+      askPrice: ticker.Ask,
+      bidPrice: ticker.Bid,
     });
   }
 }

@@ -5,6 +5,7 @@ import Logger from "../../util/logger";
 import Edge from "./Edge";
 import Graph from "./Graph";
 import Vertex from "./Vertex";
+import Transition from "./Transition";
 
 export type AssetSymbol = string;
 
@@ -45,6 +46,9 @@ export interface ITransition {
   buy: Vertex;
   edge: Edge;
   marketPair: IMarketPair;
+  positionType: "short"|"long";
+  unitCost: number;
+  volumeInSellCurrency: number;
 }
 
 const DEFAULT_GRAPH_INSTANCE = new Graph();
@@ -119,4 +123,5 @@ export {
   Edge,
   DEFAULT_GRAPH_INSTANCE as Graph,
   logger as Logger,
+  Transition,
 };
