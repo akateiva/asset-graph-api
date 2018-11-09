@@ -55,7 +55,7 @@ describe("GET /cycles/search", () => {
       sell: "EUR",
       buy: "LTL",
       exchange: "Exchange 1",
-      relativeVolume : 50, //EUR
+      relativeVolume : 50, // EUR
        unitLastPriceDate: TICKER_TEST_FIXTURE.prices[0].WriteDate.toISOString(),
     }));
     expect(result.body.cycles[0].trades[0].unitLastPrice).toBeCloseTo(3.33333333, 8); // Checks up to the eighth digit

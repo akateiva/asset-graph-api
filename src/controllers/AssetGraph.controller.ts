@@ -88,10 +88,37 @@ function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.
   return cycle;
 }
 
-export function candidateTransitionFilter(previousTransitions: AssetGraph.ITransition[],
+interface ITransitionFilterOptions {
+  startingExchange: string | undefined;
+  allowDifferentExchanges: boolean;
+  minimumVolume: number;
+  exchanges: string[] | undefined;
+}
+
+// TODO: Write test
+export function candidateTransitionFilter(opts: ITransitionFilterOptions,
+                                          previousTransitions: AssetGraph.ITransition[],
                                           e: AssetGraph.Edge,
-                                          m: AssetGraph.IMarketPair) {
-  console.log("hi");
+                                          m: AssetGraph.IMarketPair): boolean {
+
+  if (previousTransitions.length === 0) {
+    if (opts.startingExchange) {
+      if (opts.startingExchange !== m.exchange) { return false; }
+    }
+  } else {
+    if (!opts.allowDifferentExchanges) {
+      if (previousTransitions[previousTransitions.length - 1].marketPair.exchange !== m.exchange) {
+        return false;
+      }
+    }
+  }
+  const candidateTransitionVolumeInSellCurrency = (m.market === e.start.asset) ? m.baseVolume / m.basePrice : m.baseVolume; 
+  const relativeTransitionVolume = previousTransitions.reduce((a, t) => a *= t.unitCost, candidateTransitionVolumeInSellCurrency);
+  if (relativeTransitionVolume < opts.minimumVolume) { return false; }
+  if (opts.exchanges) {
+    if (opts.exchanges.indexOf(m.exchange) < 0) { return false;  }
+  }
+  return true;
 }
 
 // todo: write a test
@@ -102,7 +129,7 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
   const timeoutMs = 200; // maximum time the search can run for
   const signalRateThreshold = 1.01; // minimum rate for a signal to be generated; +1% in this case
   const size = 100; // the maximum number of cycles to return
-  //const exchangeFilter: string[] = req.query.exchanges.split(',') || undefined;
+  // const exchangeFilter: string[] = req.query.exchanges.split(',') || undefined;
   const result: CycleSearchResult.IRootObject = {
     cycles: [],
     took: NaN,
@@ -118,9 +145,17 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
     timeExhausted = true;
   }, timeoutMs);
 
+  const filterOptions: ITransitionFilterOptions = { allowDifferentExchanges: true,
+    minimumVolume: 0,
+    startingExchange: undefined,
+    exchanges: undefined,
+  };
+
+  const filterProvider = candidateTransitionFilter.bind(null, filterOptions);
+
   firstOrderLoop:
     for (const firstOrderTransition of baseVertex.getTransitions()) {
-      for (const secondOrderTransition of firstOrderTransition.buy.getTransitions()) {
+      for (const secondOrderTransition of firstOrderTransition.buy.getTransitions( filterProvider.bind(null, []) )) {
         if (firstOrderTransition.sell === secondOrderTransition.buy) {
           continue;
         }

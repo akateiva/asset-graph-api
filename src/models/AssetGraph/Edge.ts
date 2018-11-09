@@ -47,7 +47,7 @@ export default class Edge {
     }
   }
 
-  public getTransitions(filter: (e: Edge, m: IMarketPair) => boolean = () => true): ITransition[] {
+  public getTransitions(filter: (e: Edge, m: IMarketPair) => boolean): ITransition[] {
     return Array.from(this.pairs.values()).filter(filter.bind(null, this))
       .map((t) => this.makeTransition(t));
   }
