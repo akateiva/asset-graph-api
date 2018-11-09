@@ -31,6 +31,30 @@ const prices = [{
     Ask : 0.88,
     Bid : 0.88,
     WriteDate : new Date(),
-}];
+}, {
+    Name : "USD-EUR",
+    Last : 1.1,
+    BaseVolume : 50,
+    ReceivedOn : new Date(),
+    MarketCurrency : "EUR",
+    BaseCurrency : "USD",
+    Exchange : "Exchange 4",
+    Ask : 1.1,
+    Bid : 1.1,
+    WriteDate : new Date(),
+}, {
+    Name : "JPY-LTL",
+    Last : 1,
+    BaseVolume : 50,
+    ReceivedOn : new Date(),
+    MarketCurrency : "LTL",
+    BaseCurrency : "JPY",
+    Exchange : "Exchange 5",
+    Ask : 1,
+    Bid : 1,
+    WriteDate : new Date(),
+}
+
+];
 
 export default {prices};
