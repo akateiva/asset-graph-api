@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/models/Orderbook.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">All files</a> / <a href="index.html">src/models</a> Orderbook.ts
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">11.11% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>5/45</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/16</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/4</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">12.5% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>5/40</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91</td><td class="line-coverage quiet"><span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import ccxt from "ccxt";
+import Logger from "../util/logger";
+import {
+  ITransition,
+} from "./AssetGraph";
+&nbsp;
+const log = Logger.child({
+  name: "Orderbook",
+});
+&nbsp;
+interface IExchangeModule {
+  test: () =&gt; void;
+  loadMarkets: () =&gt; Promise &lt; void &gt; ;
+  symbols: string[];
+  fetchOrderBook: (marketSymbol: string) =&gt; Promise &lt; IOrderBook &gt; ;
+}
+&nbsp;
+export interface IOrderBook {
+  bids: Array &lt; [number, number] &gt; ; // bid array sorted in ascending price [price,amount]
+  asks: Array &lt; [number, number] &gt; ; // ask array sorted in descending price [price, amount]
+}
+&nbsp;
+const exchangeModuleMap = new Map &lt; string,
+  IExchangeModule | Promise &lt; IExchangeModule &gt; &gt; ();
+&nbsp;
+async function <span class="fstat-no" title="function not covered" >getExchangeModuleForTransition(</span>transition: ITransition): Promise &lt; IExchangeModule &gt; {
+  let <span class="cstat-no" title="statement not covered" >exchangeName = transition.marketPair.exchange.toLowerCase();</span>
+&nbsp;
+  // TODO: fix inconsistent exchange identifiers
+<span class="cstat-no" title="statement not covered" >  if (exchangeName === "huobi") {</span>
+<span class="cstat-no" title="statement not covered" >    exchangeName = "huobipro";</span>
+  }
+&nbsp;
+  let <span class="cstat-no" title="statement not covered" >exchangeModule = exchangeModuleMap.get(exchangeName);</span>
+<span class="cstat-no" title="statement not covered" >  if (!exchangeModule) {</span>
+<span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      log.debug("getExchangeModuleForTransition: constructing new ccxt exchange module for %s", exchangeName);</span>
+<span class="cstat-no" title="statement not covered" >      exchangeModule = (<span class="fstat-no" title="function not covered" >async () =&gt; {</span></span>
+        // @ts-ignore
+        const <span class="cstat-no" title="statement not covered" >ccxtModule = new ccxt[exchangeName]() as IExchangeModule;</span>
+<span class="cstat-no" title="statement not covered" ><span class="cstat-no" title="statement not covered" >        await ccxtModule.loadMarkets();</span></span>
+<span class="cstat-no" title="statement not covered" >        exchangeModuleMap.set(exchangeName, ccxtModule);</span>
+<span class="cstat-no" title="statement not covered" >        return ccxtModule;</span>
+      })();
+<span class="cstat-no" title="statement not covered" >      exchangeModuleMap.set(exchangeName, exchangeModule);</span>
+<span class="cstat-no" title="statement not covered" >      log.debug("getExchangeModuleForTransition: markets loaded for %s", exchangeName);</span>
+    } catch (error) {
+<span class="cstat-no" title="statement not covered" >      log.error(error);</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(`failed to get exchange module for exchange "${exchangeName}"`);</span>
+    }
+  }
+<span class="cstat-no" title="statement not covered" >  return exchangeModule;</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >getMarketPairSymbolForTransition(</span>transition: ITransition,
+                                          exchangeModule: IExchangeModule): [string, "ask" | "bid"] {
+  let pair: string;
+  let askOrBid: "ask" | "bid";
+  let <span class="cstat-no" title="statement not covered" >[<span class="cstat-no" title="statement not covered" >buy,</span> <span class="cstat-no" title="statement not covered" >sell] = [transition.buy.asset.symbol, transition.sell.asset.symbol];</span></span>
+&nbsp;
+  // TODO: make sure bitfinex is usdt
+<span class="cstat-no" title="statement not covered" >  if (buy === "USD" &amp;&amp; transition.marketPair.exchange === "Bitfinex") {</span>
+<span class="cstat-no" title="statement not covered" >    buy = "USDT";</span>
+  }
+<span class="cstat-no" title="statement not covered" >  if (sell === "USD" &amp;&amp; transition.marketPair.exchange === "Bitfinex") {</span>
+<span class="cstat-no" title="statement not covered" >    sell = "USDT";</span>
+  }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  if (exchangeModule.symbols.includes(buy + "/" + sell)) {</span>
+<span class="cstat-no" title="statement not covered" >    pair = buy + "/" + sell;</span>
+    // ccxt keeps quote currency on the right side of a market pair symbol
+    // so if we are selling base/buying market we will have to look at the asks
+<span class="cstat-no" title="statement not covered" >    askOrBid = "ask";</span>
+  } else <span class="cstat-no" title="statement not covered" >if (exchangeModule.symbols.includes(sell + "/" + buy)) {</span>
+    // if selling market/buying base look at bids
+<span class="cstat-no" title="statement not covered" >    pair = sell + "/" + buy;</span>
+<span class="cstat-no" title="statement not covered" >    askOrBid = "bid";</span>
+  } else {
+<span class="cstat-no" title="statement not covered" >    throw new Error(`failed to find a market pair for buy/sell ${buy}/${sell}`);</span>
+  }
+<span class="cstat-no" title="statement not covered" >  log.debug({sell, buy, pair, askOrBid}, "getMarketPairSymbolForTransition");</span>
+<span class="cstat-no" title="statement not covered" >  return [pair, askOrBid];</span>
+}
+&nbsp;
+export async function <span class="fstat-no" title="function not covered" >getOrderbookForTransition(</span>transition: ITransition): Promise &lt; [IOrderBook, "ask" | "bid"] &gt; {
+  const <span class="cstat-no" title="statement not covered" >exchangeModule = <span class="cstat-no" title="statement not covered" >await getExchangeModuleForTransition(transition);</span></span>
+  const <span class="cstat-no" title="statement not covered" >[marketPairSymbol, askOrBid] = getMarketPairSymbolForTransition(transition, exchangeModule);</span>
+  const <span class="cstat-no" title="statement not covered" >orderbook = <span class="cstat-no" title="statement not covered" >await exchangeModule.fetchOrderBook(marketPairSymbol);</span></span>
+<span class="cstat-no" title="statement not covered" >  return [orderbook, askOrBid];</span>
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="https://istanbul.js.org/" target="_blank">istanbul</a> at Fri Nov 09 2018 16:31:16 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

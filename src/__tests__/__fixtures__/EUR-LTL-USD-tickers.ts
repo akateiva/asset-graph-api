@@ -12,7 +12,7 @@ const prices = [{
 }, {
     Name : "USD-LTL",
     Last : 0.33,
-    BaseVolume : 50,
+    BaseVolume : 5000,
     ReceivedOn : new Date(),
     MarketCurrency : "LTL",
     BaseCurrency : "USD",
@@ -53,7 +53,7 @@ const prices = [{
     Ask : 1,
     Bid : 1,
     WriteDate : new Date(),
-}
+},
 
 ];
 

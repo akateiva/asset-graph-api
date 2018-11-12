@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/Server.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">All files</a> / <a href="index.html">src</a> Server.ts
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">82.61% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>38/46</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">66.67% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>4/6</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">66.67% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>4/6</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">88.89% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>32/36</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line high'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52</td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import express from "express";
+import { ChangeStream, MongoClient } from "mongodb";
+import pino from "pino";
+import pinoHttp from "pino-http";
+import * as AssetGraphController from "./controllers/AssetGraph.controller";
+import * as AssetGraphModel from "./models/AssetGraph";
+import config from "./util/config";
+&nbsp;
+export default class Server {
+  public app: express.Application;
+  public log: pino.Logger;
+  public mongoClient: MongoClient | null = null;
+  private changeStream: ChangeStream | null = null;
+  private useChangeStream: boolean;
+  private mongoUrl: string;
+  private httpServer: any;
+&nbsp;
+  constructor(<span class="missing-if-branch" title="if path not taken" >I</span>opts: {MONGO_URL?: string, useChangeStream?: boolean} = {}) {
+    this.useChangeStream = opts.useChangeStream || false;
+    this.mongoUrl = opts.MONGO_URL || <span class="branch-1 cbranch-no" title="branch not covered" >config.get("MONGO_URL");</span>
+    this.app = express();
+    this.log = pino();
+    this.app.use(pinoHttp({logger: this.log}));
+    this.setupRoutes();
+    this.app.use(<span class="fstat-no" title="function not covered" >(</span>err: Error, req: express.Request, res: express.Response, next: express.NextFunction) =&gt; {
+<span class="cstat-no" title="statement not covered" >      req.log.error(err, "error processing a request");</span>
+<span class="cstat-no" title="statement not covered" >      res.status(500).send("Something broke!");</span>
+    });
+  }
+&nbsp;
+  public async listen(port: number) {
+    this.log.info("listen: connecting to mongodb");
+    this.mongoClient = await MongoClient.connect(this.mongoUrl, {useNewUrlParser: true});
+    this.log.info("listen: attaching asset graph model to mongodb, useChangeStream: %b", this.useChangeStream);
+    this.changeStream = await AssetGraphModel.attachToMongo(this.mongoClient, this.useChangeStream);
+    this.log.info("listen: starting http server on port %d", port);
+    this.httpServer = await this.app.listen(port);
+    this.log.info("listen: listening on %j", this.httpServer.address());
+    return this.httpServer;
+  }
+&nbsp;
+<span class="fstat-no" title="function not covered" >  public async shutdown() {</span>
+    if (<span class="cstat-no" title="statement not covered" >this.changeStream)</span> { <span class="cstat-no" title="statement not covered" ><span class="cstat-no" title="statement not covered" >await this.changeStream!.close();</span> </span>}
+    if (<span class="cstat-no" title="statement not covered" >this.mongoClient)</span> { <span class="cstat-no" title="statement not covered" ><span class="cstat-no" title="statement not covered" >await this.mongoClient.close();</span> </span>}
+  }
+&nbsp;
+  private setupRoutes() {
+    this.app.get("/cycles/search/:baseAsset", AssetGraphController.findCycles);
+    this.app.get("/cycles/:cycleId", AssetGraphController.getCycle);
+  }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="https://istanbul.js.org/" target="_blank">istanbul</a> at Fri Nov 09 2018 16:31:16 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-import {IAsset, Edge, ITransition} from "./index";
+import {IAsset, Edge, ITransition, IMarketPair} from "./index";
 
 export default class Vertex {
   public asset: IAsset;
@@ -12,10 +12,10 @@ export default class Vertex {
     return this.edges.map((edge) => edge.end);
   }
 
-  public getTransitions(): ITransition[] {
+  public getTransitions(filter: (e: Edge, m: IMarketPair) => boolean = () => true): ITransition[] {
     const transitions: ITransition[] = [];
     for ( const edge of this.edges) {
-      transitions.push(... edge.getTransitions());
+      transitions.push(... edge.getTransitions(filter));
     }
     return transitions;
   }

@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for src/controllers/AssetGraph.controller.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../../prettify.css" />
+    <link rel="stylesheet" href="../../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../../index.html">All files</a> / <a href="index.html">src/controllers</a> AssetGraph.controller.ts
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">56.3% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>67/119</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">46.43% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>13/28</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">37.5% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>6/16</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">57.55% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>61/106</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line medium'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">10x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import {
+  Request,
+  Response,
+  NextFunction,
+} from "express";
+import * as AssetGraph from "../models/AssetGraph";
+import * as Orderbook from "../models/Orderbook";
+import Logger from "../util/logger";
+&nbsp;
+const logger = Logger.child({
+  name: "AssetGraphController",
+});
+&nbsp;
+declare namespace CycleSearchResult {
+  export interface ITrade {
+    buy: string;
+    sell: string;
+    exchange: string;
+    unitLastPrice: number;
+    unitLastPriceDate: string;
+    relativeVolume: number;
+  }
+&nbsp;
+  export interface ICycle {
+    maxRate: number;
+    id: string; // a unique identifier contains sell[n],exchange[n]
+    trades: ITrade[];
+  }
+&nbsp;
+  export interface IRootObject {
+    took: number;
+    timeExhausted: boolean;
+    cycles: ICycle[];
+  }
+}
+&nbsp;
+function serializeCycle(transitions: AssetGraph.ITransition[]): string {
+  return transitions.reduce((identifierString, transition) =&gt; {
+    identifierString += `${transition.sell.asset.symbol},${transition.marketPair.exchange},`;
+    return identifierString;
+  }, "").slice(0, -1);
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >deserializeCycle(</span>id: string): AssetGraph.ITransition[] {
+  const idComponents = <span class="cstat-no" title="statement not covered" >id.split(",");</span>
+<span class="cstat-no" title="statement not covered" >  if (idComponents.length % 2 !== 0) {</span>
+<span class="cstat-no" title="statement not covered" >    throw new Error("there must be an even number of id components");</span>
+  }
+  const transitions: AssetGraph.ITransition[] = <span class="cstat-no" title="statement not covered" >[];</span>
+<span class="cstat-no" title="statement not covered" >  for (let i = 0; i &lt; idComponents.length; i += 2) {</span>
+    const sellAssetSymbol = <span class="cstat-no" title="statement not covered" >idComponents[i];</span>
+    const buyAssetSymbol = <span class="cstat-no" title="statement not covered" >idComponents[i + 2] || idComponents[0];</span>
+    const exchange = <span class="cstat-no" title="statement not covered" >idComponents[i + 1];</span>
+    const edge = <span class="cstat-no" title="statement not covered" >AssetGraph.Graph.getEdgeBySymbols(sellAssetSymbol, buyAssetSymbol);</span>
+<span class="cstat-no" title="statement not covered" >    if (!edge) {</span>
+<span class="cstat-no" title="statement not covered" >      logger.error({ sellAssetSymbol, buyAssetSymbol, exchange}, "could not find edge");</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error("could not find edge");</span>
+    }
+    const transition = <span class="cstat-no" title="statement not covered" >edge.getTransitionByExchange(exchange);</span>
+<span class="cstat-no" title="statement not covered" >    if (!transition) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(`could not find transition ${sellAssetSymbol} to ${buyAssetSymbol} via ${exchange} `);</span>
+    }
+<span class="cstat-no" title="statement not covered" >    transitions.push(transition);</span>
+  }
+<span class="cstat-no" title="statement not covered" >  return transitions;</span>
+}
+&nbsp;
+function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.ICycle {
+  const cycle: CycleSearchResult.ICycle = transitions.reduce((signal, transition) =&gt; {
+    const trade = {
+      buy: transition.buy.asset.symbol,
+      sell: transition.sell.asset.symbol,
+      exchange: transition.marketPair.exchange,
+      unitLastPrice: transition.unitCost,
+      volumeInSellCurrency: transition.volumeInSellCurrency,
+      unitLastPriceDate: transition.marketPair.date.toISOString(),
+      relativeVolume: transition.marketPair.baseVolume,
+    };
+    signal.trades.push(trade);
+    signal.maxRate *= trade.unitLastPrice;
+    return signal;
+  }, {
+    trades: [] as CycleSearchResult.ITrade[],
+    id: serializeCycle(transitions),
+    maxRate: 1,
+  });
+&nbsp;
+  return cycle;
+}
+&nbsp;
+// todo: write a test
+export function findCycles(req: Request, res: Response, next: NextFunction) {
+  const started = new Date(); // record when the request started
+  const baseAsset = req.params.baseAsset; // asset from which the cycle search will be performed
+  const timeoutMs = 200; // maximum time the search can run for
+  const signalRateThreshold = 1.01; // minimum rate for a signal to be generated; +1% in this case
+  const result: CycleSearchResult.IRootObject = {
+    cycles: [],
+    took: NaN,
+    timeExhausted: false,
+  };
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!baseAsset) {
+<span class="cstat-no" title="statement not covered" >    throw new Error("no base asset provided");</span>
+  }
+  const baseVertex = AssetGraph.Graph.getVertexByAsset({
+    symbol: baseAsset,
+  });
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!baseVertex) {
+<span class="cstat-no" title="statement not covered" >    throw new Error("no such asset in the graph");</span>
+  }
+&nbsp;
+  let combinationsExplored = 0;
+  let timeExhausted = false;
+  const timeout = setTimeout(<span class="fstat-no" title="function not covered" >() =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    timeExhausted = true;</span>
+  }, timeoutMs);
+&nbsp;
+  firstOrderLoop:
+    for (const firstOrderTransition of baseVertex.getTransitions()) {
+      for (const secondOrderTransition of firstOrderTransition.buy.getTransitions()) {
+        if (firstOrderTransition.sell === secondOrderTransition.buy) {
+          continue;
+        }
+        for (const thirdOrderTransition of secondOrderTransition.buy.getTransitions()) {
+          combinationsExplored++;
+          if (firstOrderTransition.sell !== thirdOrderTransition.buy) {
+            continue;
+          }
+          <span class="missing-if-branch" title="if path not taken" >I</span>if (timeExhausted) {
+<span class="cstat-no" title="statement not covered" >            break firstOrderLoop;</span>
+          }
+          const rate = firstOrderTransition.unitCost * secondOrderTransition.unitCost * thirdOrderTransition.unitCost;
+          if (rate &gt; signalRateThreshold) {
+            result.cycles.push(makeCycle(firstOrderTransition, secondOrderTransition, thirdOrderTransition));
+          }
+        }
+      }
+    }
+&nbsp;
+  result.took = new Date().getTime() - started.getTime();
+  result.timeExhausted = timeExhausted;
+  res.json(result);
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >getOrdersInTransitionSellCurrency(</span>orderbook: Orderbook.IOrderBook, askOrBid: "ask" | "bid"): Array &lt; [number, number] &gt; {
+  // orderbooks give price in base, amount in market by default
+<span class="cstat-no" title="statement not covered" >  if (askOrBid === "bid") {</span>
+    // price in market, order amount in base
+<span class="cstat-no" title="statement not covered" >    return orderbook.bids;</span>
+  } else {
+    // price in base, order amount in market
+<span class="cstat-no" title="statement not covered" >    return orderbook.asks.map(<span class="fstat-no" title="function not covered" >(<span class="cstat-no" title="statement not covered" ></span>[<span class="cstat-no" title="statement not covered" >price,</span> <span class="cstat-no" title="statement not covered" >amount]</span>)</span> =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      return [1 / price, amount * price] as [number, number];</span>
+    });
+  }
+}
+&nbsp;
+export function computeTransitionRevenue(endownment: number, orders: Array &lt; [number, number] &gt; ): number {
+  let cost = 0;
+  let revenue = 0;
+  logger.debug("starting integrations");
+  for (const order of orders) {
+    const orderAmount = order[1];
+    const orderPrice = order[0];
+    const toSell = endownment - cost;
+    if (toSell &gt; orderAmount) {
+      revenue += orderAmount * orderPrice;
+      cost += orderAmount;
+    } else {
+      revenue += toSell * orderPrice;
+      cost += toSell;
+      logger.debug({toSell, orderPrice}, "one order is enough");
+      break;
+    }
+    logger.debug({orderAmount, orderPrice, revenue, cost, nextToSell: endownment - cost}, "integration step");
+  }
+  if (cost !== endownment) { revenue = NaN; }
+&nbsp;
+  return revenue;
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >computeTotalRevenue(</span>endownment: number, transitionsOrders: Array &lt; Array &lt; [number, number] &gt;&gt; ): number {
+  const totalRevenue = <span class="cstat-no" title="statement not covered" >transitionsOrders.reduce(<span class="fstat-no" title="function not covered" >(</span>prevTransitionRevenue, marketOrderList) =&gt; {</span>
+    const transitionRevenue = <span class="cstat-no" title="statement not covered" >computeTransitionRevenue(prevTransitionRevenue, marketOrderList);</span>
+<span class="cstat-no" title="statement not covered" >    return transitionRevenue;</span>
+  }, endownment);
+<span class="cstat-no" title="statement not covered" >  return totalRevenue;</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >sampleEndownments(</span>transitionsOrders: Array &lt; Array &lt; [number, number] &gt;&gt; ) {
+  const endownments = <span class="cstat-no" title="statement not covered" >[0.1, 0.2, 1, 5, 100, 1000];</span>
+<span class="cstat-no" title="statement not covered" >  return endownments.map(<span class="fstat-no" title="function not covered" >(</span>endownment) =&gt; {</span>
+    let revenue;
+<span class="cstat-no" title="statement not covered" >    try {</span>
+<span class="cstat-no" title="statement not covered" >      revenue = computeTotalRevenue(endownment, transitionsOrders);</span>
+    } catch (e) {
+<span class="cstat-no" title="statement not covered" >      revenue = NaN;</span>
+    }
+<span class="cstat-no" title="statement not covered" >    return {</span>
+      endownment,
+      revenue,
+    };
+  });
+}
+&nbsp;
+export async function <span class="fstat-no" title="function not covered" >getCycle(</span>req: Request, res: Response, next: NextFunction) {
+  try {
+    const <span class="cstat-no" title="statement not covered" >cycleId = req.params.cycleId;</span>
+<span class="cstat-no" title="statement not covered" >    if (!cycleId) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error("no cycle id provided");</span>
+    }
+&nbsp;
+    const <span class="cstat-no" title="statement not covered" >transitions = deserializeCycle(cycleId);</span>
+    const <span class="cstat-no" title="statement not covered" >orderbooks = <span class="cstat-no" title="statement not covered" >await Promise.all(transitions.map(Orderbook.getOrderbookForTransition));</span></span>
+    const <span class="cstat-no" title="statement not covered" >marketOrders = orderbooks.map(<span class="fstat-no" title="function not covered" >(<span class="cstat-no" title="statement not covered" ></span>[<span class="cstat-no" title="statement not covered" >orderbook,</span> <span class="cstat-no" title="statement not covered" >askOrBid]</span>,</span> index) =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >      return getOrdersInTransitionSellCurrency(orderbook, askOrBid);</span>
+    });
+    const <span class="cstat-no" title="statement not covered" >endownmentsAndRevenues = sampleEndownments(marketOrders);</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    res.json({cycleId, endownmentsAndRevenues, marketOrders});</span>
+    // magic number 1 = endownmnet
+  } catch (e) {
+<span class="cstat-no" title="statement not covered" >    next(e);</span>
+  }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="https://istanbul.js.org/" target="_blank">istanbul</a> at Fri Nov 09 2018 16:31:16 GMT+0100 (Central European Standard Time)
+</div>
+</div>
+<script src="../../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../../sorter.js"></script>
+</body>
+</html>

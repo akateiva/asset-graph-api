@@ -34,25 +34,6 @@ declare namespace CycleSearchResult {
   }
 }
 
-// returns the cost of a transition based on last/ask/bid ticker price
-// 1 BUY_CURRENCY costs X SELL_CURRENCY
-function getTransitionUnitCost(...transitions: AssetGraph.ITransition[]): number {
-  let rate = 1;
-  for (const transition of transitions) {
-    let transitionRate: number;
-    // selling base / buying market = asks
-    if (transition.sell.asset === transition.marketPair.market) {
-      transitionRate = transition.marketPair.askPrice || transition.marketPair.basePrice;
-    } else {
-      // selling market / buying base = bids
-      // invert, because the cost has to be in sell currency
-      transitionRate = 1 / (transition.marketPair.bidPrice || transition.marketPair.basePrice);
-    }
-    rate *= transitionRate; // * (1 - 0.0025);
-  }
-  return rate;
-}
-
 function serializeCycle(transitions: AssetGraph.ITransition[]): string {
   return transitions.reduce((identifierString, transition) => {
     identifierString += `${transition.sell.asset.symbol},${transition.marketPair.exchange},`;
@@ -72,11 +53,7 @@ function deserializeCycle(id: string): AssetGraph.ITransition[] {
     const exchange = idComponents[i + 1];
     const edge = AssetGraph.Graph.getEdgeBySymbols(sellAssetSymbol, buyAssetSymbol);
     if (!edge) {
-      logger.error({
-        sellAssetSymbol,
-        buyAssetSymbol,
-        exchange,
-      }, "could not find edge");
+      logger.error({ sellAssetSymbol, buyAssetSymbol, exchange}, "could not find edge");
       throw new Error("could not find edge");
     }
     const transition = edge.getTransitionByExchange(exchange);
@@ -89,18 +66,18 @@ function deserializeCycle(id: string): AssetGraph.ITransition[] {
 }
 
 function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.ICycle {
-  const cycle: CycleSearchResult.ICycle = transitions.reduceRight((signal, transition) => {
-    const transitionExchangeRate = getTransitionUnitCost(transition);
+  const cycle: CycleSearchResult.ICycle = transitions.reduce((signal, transition, transitionIndex) => {
     const trade = {
       buy: transition.buy.asset.symbol,
       sell: transition.sell.asset.symbol,
       exchange: transition.marketPair.exchange,
-      unitLastPrice: transitionExchangeRate,
+      unitLastPrice: transition.unitCost,
+      volumeInSellCurrency: transition.volumeInSellCurrency,
       unitLastPriceDate: transition.marketPair.date.toISOString(),
-      relativeVolume: transition.marketPair.baseVolume,
+      relativeVolume: transition.volumeInSellCurrency / signal.maxRate,
     };
-    signal.trades.unshift(trade);
-    signal.maxRate *= transitionExchangeRate;
+    signal.trades.push(trade);
+    signal.maxRate *= trade.unitLastPrice;
     return signal;
   }, {
     trades: [] as CycleSearchResult.ITrade[],
@@ -111,26 +88,56 @@ function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.
   return cycle;
 }
 
+interface ITransitionFilterOptions {
+  startingExchange: string | undefined;
+  allowDifferentExchanges: boolean;
+  minimumVolume: number;
+  exchanges: string[] | undefined;
+}
+
+// TODO: Write test
+export function candidateTransitionFilter(opts: ITransitionFilterOptions,
+                                          previousTransitions: AssetGraph.ITransition[],
+                                          e: AssetGraph.Edge,
+                                          m: AssetGraph.IMarketPair): boolean {
+
+  if (previousTransitions.length === 0) {
+    if (opts.startingExchange) {
+      if (opts.startingExchange !== m.exchange) { return false; }
+    }
+  } else {
+    if (!opts.allowDifferentExchanges) {
+      if (previousTransitions[previousTransitions.length - 1].marketPair.exchange !== m.exchange) {
+        return false;
+      }
+    }
+  }
+  const candidateTransitionVolumeInSellCurrency = (m.market === e.start.asset) ? m.baseVolume / m.basePrice : m.baseVolume; 
+  const relativeTransitionVolume = previousTransitions.reduce((a, t) => a *= t.unitCost, candidateTransitionVolumeInSellCurrency);
+  if (relativeTransitionVolume < opts.minimumVolume) { return false; }
+  if (opts.exchanges) {
+    if (opts.exchanges.indexOf(m.exchange) < 0) { return false;  }
+  }
+  return true;
+}
+
 // todo: write a test
+// TODO: validate input
 export function findCycles(req: Request, res: Response, next: NextFunction) {
   const started = new Date(); // record when the request started
-  const baseAsset = req.params.baseAsset; // asset from which the cycle search will be performed
+  const baseAsset = req.body.baseAssetSymbol; // asset from which the cycle search will be performed
   const timeoutMs = 200; // maximum time the search can run for
   const signalRateThreshold = 1.01; // minimum rate for a signal to be generated; +1% in this case
+  const size = 200; // the maximum number of cycles to return
+  // const exchangeFilter: string[] = req.query.exchanges.split(',') || undefined;
   const result: CycleSearchResult.IRootObject = {
     cycles: [],
     took: NaN,
     timeExhausted: false,
   };
-  if (!baseAsset) {
-    throw new Error("no base asset provided");
-  }
-  const baseVertex = AssetGraph.Graph.getVertexByAsset({
-    symbol: baseAsset,
-  });
-  if (!baseVertex) {
-    throw new Error("no such asset in the graph");
-  }
+  if (!baseAsset) { throw new Error("no base asset provided"); }
+  const baseVertex = AssetGraph.Graph.getVertexByAsset({symbol: baseAsset});
+  if (!baseVertex) { throw new Error("no such asset in the graph"); }
 
   let combinationsExplored = 0;
   let timeExhausted = false;
@@ -138,23 +145,33 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
     timeExhausted = true;
   }, timeoutMs);
 
+  const filterOptions: ITransitionFilterOptions = { allowDifferentExchanges: true,
+    minimumVolume: req.body.minimumVolume || 0,
+    startingExchange: undefined,
+    exchanges: req.body.exchanges || undefined,
+  };
+
+  const filterProvider = candidateTransitionFilter.bind(null, filterOptions);
+
   firstOrderLoop:
-    for (const firstOrderTransition of baseVertex.getTransitions()) {
-      for (const secondOrderTransition of firstOrderTransition.buy.getTransitions()) {
+    for (const firstOrderTransition of baseVertex.getTransitions(filterProvider.bind(null, []))) {
+      for (const secondOrderTransition of firstOrderTransition.buy
+          .getTransitions( filterProvider.bind(null, [firstOrderTransition ]) )) {
         if (firstOrderTransition.sell === secondOrderTransition.buy) {
           continue;
         }
-        for (const thirdOrderTransition of secondOrderTransition.buy.getTransitions()) {
+        for (const thirdOrderTransition of secondOrderTransition.buy
+            .getTransitions( filterProvider.bind(null, [firstOrderTransition, secondOrderTransition]) )) {
           combinationsExplored++;
           if (firstOrderTransition.sell !== thirdOrderTransition.buy) {
             continue;
           }
-          if (timeExhausted) {
-            break firstOrderLoop;
-          }
-          const rate = getTransitionUnitCost(firstOrderTransition, secondOrderTransition, thirdOrderTransition);
+          const rate = firstOrderTransition.unitCost * secondOrderTransition.unitCost * thirdOrderTransition.unitCost;
           if (rate > signalRateThreshold) {
             result.cycles.push(makeCycle(firstOrderTransition, secondOrderTransition, thirdOrderTransition));
+          }
+          if (timeExhausted || result.cycles.length >= size) {
+            break firstOrderLoop;
           }
         }
       }
@@ -163,19 +180,6 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
   result.took = new Date().getTime() - started.getTime();
   result.timeExhausted = timeExhausted;
   res.json(result);
-}
-
-function getOrdersInTransitionSellCurrency(orderbook: Orderbook.IOrderBook, askOrBid: "ask" | "bid"): Array < [number, number] > {
-  // orderbooks give price in base, amount in market by default
-  if (askOrBid === "bid") {
-    // price in market, order amount in base
-    return orderbook.bids;
-  } else {
-    // price in base, order amount in market
-    return orderbook.asks.map(([price, amount]) => {
-      return [1 / price, amount * price] as [number, number];
-    });
-  }
 }
 
 export function computeTransitionRevenue(endownment: number, orders: Array < [number, number] > ): number {
@@ -234,9 +238,16 @@ export async function getCycle(req: Request, res: Response, next: NextFunction) 
     }
 
     const transitions = deserializeCycle(cycleId);
-    const orderbooks = await Promise.all(transitions.map(Orderbook.getOrderbookForTransition));
-    const marketOrders = orderbooks.map(([orderbook, askOrBid], index) => {
-      return getOrdersInTransitionSellCurrency(orderbook, askOrBid);
+    const orderbooks = await Promise.all(transitions.map((t) => {
+      return Orderbook.getOrderbookForTransition(t).then((r) => r[0]);
+    }));
+    const marketOrders = orderbooks.map((orderbook, index) => {
+      const transition = transitions[index];
+      if (transition.positionType === "short") {
+        return orderbook.bids;
+      } else {
+        return orderbook.asks.map(([price, amount]) => [1 / price, amount * price] as [number, number]);
+      }
     });
     const endownmentsAndRevenues = sampleEndownments(marketOrders);
 
