@@ -41,9 +41,12 @@ async function teardownServer(): Promise<void> {
 beforeAll(setupServer, 10 * 1000);
 afterAll(teardownServer, 10 * 1000);
 
-describe("GET /cycles/search", () => {
+describe("POST /cycles/search", () => {
   it("returns correct arbitrage cycle for EUR-LTL-USD-EUR fixture", async () => {
-    const result = await request(httpServer).get("/cycles/search/EUR");
+    const result = await request(httpServer).post("/cycles/search")
+      .send({
+        baseAssetSymbol: "EUR",
+      });
     console.log(result.body);
     console.log(result.body.cycles[0].trades);
     expect(result.status).toBe(200);
@@ -76,4 +79,31 @@ describe("GET /cycles/search", () => {
     }));
     expect(result.body.cycles[0].trades[2].unitLastPrice).toBeCloseTo(1.136363636, 8); // Checks up to the eighth digit
   });
+
+  it("finds no cycles from EUR with minimum volume of 10k EUR", async () => {
+    const result = await request(httpServer).post("/cycles/search")
+      .send({
+        baseAssetSymbol: "EUR",
+        minimumVolume: 10000,
+      });
+    console.log(result.body);
+    console.log(result.body.cycles);
+    expect(result.status).toBe(200);
+    expect(result.body.timeExhausted).toBe(false);
+    expect(result.body.took).toBeGreaterThanOrEqual(0);
+    expect(result.body.cycles).toHaveLength(0);
+  });
+
+  it("finds no cycles from EUR on Exchange 1 and 2 exclusively", async () => {
+    const result = await request(httpServer).post("/cycles/search")
+      .send({
+        baseAssetSymbol: "EUR",
+        exchanges: ["Exchange 1", "Exchange 2"],
+      });
+    console.log(result.body);
+    console.log(result.body.cycles);
+    expect(result.status).toBe(200);
+    expect(result.body.timeExhausted).toBe(false);
+    expect(result.body.took).toBeGreaterThanOrEqual(0);
+    expect(result.body.cycles).toHaveLength(0);  })
 });

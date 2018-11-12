@@ -5,6 +5,7 @@ import pinoHttp from "pino-http";
 import * as AssetGraphController from "./controllers/AssetGraph.controller";
 import * as AssetGraphModel from "./models/AssetGraph";
 import config from "./util/config";
+import bodyParser from "body-parser";
 
 export default class Server {
   public app: express.Application;
@@ -20,6 +21,7 @@ export default class Server {
     this.mongoUrl = opts.MONGO_URL || config.get("MONGO_URL");
     this.app = express();
     this.log = pino();
+    this.app.use(bodyParser.json());
     this.app.use(pinoHttp({logger: this.log}));
     this.setupRoutes();
     this.app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -45,7 +47,7 @@ export default class Server {
   }
 
   private setupRoutes() {
-    this.app.get("/cycles/search/:baseAsset", AssetGraphController.findCycles);
+    this.app.post("/cycles/search", AssetGraphController.findCycles);
     this.app.get("/cycles/:cycleId", AssetGraphController.getCycle);
   }
 }

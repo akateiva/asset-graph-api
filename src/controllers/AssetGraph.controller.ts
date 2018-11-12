@@ -125,10 +125,10 @@ export function candidateTransitionFilter(opts: ITransitionFilterOptions,
 // TODO: validate input
 export function findCycles(req: Request, res: Response, next: NextFunction) {
   const started = new Date(); // record when the request started
-  const baseAsset = req.params.baseAsset; // asset from which the cycle search will be performed
+  const baseAsset = req.body.baseAssetSymbol; // asset from which the cycle search will be performed
   const timeoutMs = 200; // maximum time the search can run for
   const signalRateThreshold = 1.01; // minimum rate for a signal to be generated; +1% in this case
-  const size = 100; // the maximum number of cycles to return
+  const size = 200; // the maximum number of cycles to return
   // const exchangeFilter: string[] = req.query.exchanges.split(',') || undefined;
   const result: CycleSearchResult.IRootObject = {
     cycles: [],
@@ -146,20 +146,22 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
   }, timeoutMs);
 
   const filterOptions: ITransitionFilterOptions = { allowDifferentExchanges: true,
-    minimumVolume: 0,
+    minimumVolume: req.body.minimumVolume || 0,
     startingExchange: undefined,
-    exchanges: undefined,
+    exchanges: req.body.exchanges || undefined,
   };
 
   const filterProvider = candidateTransitionFilter.bind(null, filterOptions);
 
   firstOrderLoop:
-    for (const firstOrderTransition of baseVertex.getTransitions()) {
-      for (const secondOrderTransition of firstOrderTransition.buy.getTransitions( filterProvider.bind(null, []) )) {
+    for (const firstOrderTransition of baseVertex.getTransitions(filterProvider.bind(null, []))) {
+      for (const secondOrderTransition of firstOrderTransition.buy
+          .getTransitions( filterProvider.bind(null, [firstOrderTransition ]) )) {
         if (firstOrderTransition.sell === secondOrderTransition.buy) {
           continue;
         }
-        for (const thirdOrderTransition of secondOrderTransition.buy.getTransitions()) {
+        for (const thirdOrderTransition of secondOrderTransition.buy
+            .getTransitions( filterProvider.bind(null, [firstOrderTransition, secondOrderTransition]) )) {
           combinationsExplored++;
           if (firstOrderTransition.sell !== thirdOrderTransition.buy) {
             continue;
