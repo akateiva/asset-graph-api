@@ -41,6 +41,8 @@ export default class Edge {
       pair = newPair;
       this.pairs.set(pair.exchange, pair);
     } else {
+      pair.askPrice = newPair.askPrice;
+      pair.bidPrice = newPair.bidPrice;
       pair.basePrice = newPair.basePrice;
       pair.baseVolume = newPair.baseVolume;
       pair.date = newPair.date;

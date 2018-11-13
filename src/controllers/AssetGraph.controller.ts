@@ -121,7 +121,6 @@ export function candidateTransitionFilter(opts: ITransitionFilterOptions,
   return true;
 }
 
-// todo: write a test
 // TODO: validate input
 export function findCycles(req: Request, res: Response, next: NextFunction) {
   const started = new Date(); // record when the request started
