@@ -238,6 +238,7 @@ export async function getCycle(req: Request, res: Response, next: NextFunction) 
     }
 
     const transitions = deserializeCycle(cycleId);
+    const tickerBasedUnitPrices = transitions.map((t) => t.unitCost);
     const orderbooks = await Promise.all(transitions.map((t) => {
       return Orderbook.getOrderbookForTransition(t).then((r) => r[0]);
     }));
@@ -251,7 +252,7 @@ export async function getCycle(req: Request, res: Response, next: NextFunction) 
     });
     const endownmentsAndRevenues = sampleEndownments(marketOrders);
 
-    res.json({cycleId, endownmentsAndRevenues, marketOrders});
+    res.json({cycleId, endownmentsAndRevenues, marketOrders, tickerBasedUnitPrices});
     // magic number 1 = endownmnet
   } catch (e) {
     next(e);
