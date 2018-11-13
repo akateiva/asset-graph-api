@@ -114,7 +114,7 @@ export function candidateTransitionFilter(opts: ITransitionFilterOptions,
   }
   const candidateTransitionVolumeInSellCurrency = (m.market === e.start.asset) ? m.baseVolume / m.basePrice : m.baseVolume; 
   const relativeTransitionVolume = previousTransitions.reduce((a, t) => a *= t.unitCost, candidateTransitionVolumeInSellCurrency);
-  if (relativeTransitionVolume < opts.minimumVolume) { return false; }
+                                            //if (relativeTransitionVolume < opts.minimumVolume) { return false; }
   if (opts.exchanges) {
     if (opts.exchanges.indexOf(m.exchange) < 0) { return false;  }
   }
@@ -128,7 +128,7 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
   const baseAsset = req.body.baseAssetSymbol; // asset from which the cycle search will be performed
   const timeoutMs = 200; // maximum time the search can run for
   const signalRateThreshold = 1.01; // minimum rate for a signal to be generated; +1% in this case
-  const size = 200; // the maximum number of cycles to return
+  const size = 400; // the maximum number of cycles to return
   // const exchangeFilter: string[] = req.query.exchanges.split(',') || undefined;
   const result: CycleSearchResult.IRootObject = {
     cycles: [],
