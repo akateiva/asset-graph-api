@@ -9,11 +9,9 @@ let httpServer: any;
 const mongod = new MongoMemoryServer({instance: {dbName: "xlab-prices"}});
 
 async function insertFixtureIntoDatabase(connectionString: string): Promise<void> {
-  console.log("starting to write fixtures");
   const client = new MongoClient(connectionString, {useNewUrlParser: false});
   await client.connect();
   await client.db("xlab-prices").collection("prices").insertMany(TICKER_TEST_FIXTURE.prices);
-  console.log("fixtures inserted");
 }
 
 async function setupServer(): Promise<Server> {
@@ -47,8 +45,6 @@ describe("POST /cycles/search", () => {
       .send({
         baseAssetSymbol: "EUR",
       });
-    console.log(result.body);
-    console.log(result.body.cycles[0].trades);
     expect(result.status).toBe(200);
     expect(result.body.timeExhausted).toBe(false);
     expect(result.body.took).toBeGreaterThan(0);
@@ -86,8 +82,6 @@ describe("POST /cycles/search", () => {
         baseAssetSymbol: "EUR",
         minimumVolume: 10000,
       });
-    console.log(result.body);
-    console.log(result.body.cycles);
     expect(result.status).toBe(200);
     expect(result.body.timeExhausted).toBe(false);
     expect(result.body.took).toBeGreaterThanOrEqual(0);
@@ -100,10 +94,17 @@ describe("POST /cycles/search", () => {
         baseAssetSymbol: "EUR",
         exchanges: ["Exchange 1", "Exchange 2"],
       });
-    console.log(result.body);
-    console.log(result.body.cycles);
     expect(result.status).toBe(200);
     expect(result.body.timeExhausted).toBe(false);
     expect(result.body.took).toBeGreaterThanOrEqual(0);
-    expect(result.body.cycles).toHaveLength(0);  })
+    expect(result.body.cycles).toHaveLength(0); });
+});
+
+describe("GET /symbols", () => {
+  it("returns the symbols from the fixture", async () => {
+    const result = await request(httpServer).get("/symbols");
+    expect(result.status).toBe(200);
+    const symbolsInFixture = ["USD", "LTL", "EUR", "JPY"];
+    expect(result.body.availableSymbols).toEqual(expect.arrayContaining(symbolsInFixture));
+  });
 });

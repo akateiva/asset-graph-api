@@ -257,3 +257,7 @@ export async function getCycle(req: Request, res: Response, next: NextFunction) 
     next(e);
   }
 }
+
+export function getAvailableAssetSymbols(req: Request, res: Response) {
+  return res.json({availableSymbols: AssetGraph.Graph.getAvailableAssetSymbols()});
+}
