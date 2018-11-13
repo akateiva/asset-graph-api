@@ -215,7 +215,7 @@ function computeTotalRevenue(endownment: number, transitionsOrders: Array < Arra
 }
 
 function sampleEndownments(transitionsOrders: Array < Array < [number, number] >> ) {
-  const endownments = [0.1, 0.2, 1, 5, 100, 1000];
+  const endownments = [0.01, 0.05, 0.1, 0.2, 0.5, 1, 5, 10, 100, 1000];
   return endownments.map((endownment) => {
     let revenue;
     try {
