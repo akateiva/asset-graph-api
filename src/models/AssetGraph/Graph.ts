@@ -39,6 +39,10 @@ export default class Graph {
     return edge;
   }
 
+  public getAvailableAssetSymbols(): string[] {
+    return Array.from(this.vertices.keys());
+  }
+
   public getVertexCount(): number {
     return this.vertices.size;
   }

@@ -49,5 +49,6 @@ export default class Server {
   private setupRoutes() {
     this.app.post("/cycles/search", AssetGraphController.findCycles);
     this.app.get("/cycles/:cycleId", AssetGraphController.getCycle);
+    this.app.get("/symbols", AssetGraphController.getAvailableAssetSymbols);
   }
 }
