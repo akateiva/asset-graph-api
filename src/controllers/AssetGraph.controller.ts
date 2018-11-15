@@ -94,6 +94,7 @@ interface ITransitionFilterOptions {
   allowDifferentExchanges: boolean;
   minimumVolume: number;
   exchanges: string[] | undefined;
+  rateThreshold: number;
 }
 
 // TODO: Write test
@@ -149,6 +150,7 @@ export function findCyclesOld(req: Request, res: Response, next: NextFunction) {
     minimumVolume: req.body.minimumVolume || 0,
     startingExchange: undefined,
     exchanges: req.body.exchanges || undefined,
+    rateThreshold: 1.01
   };
 
   const filterProvider = candidateTransitionFilter.bind(null, filterOptions);
@@ -189,12 +191,15 @@ function evaluateTransitionTriangle(opts: ITransitionFilterOptions, baseToLeft: 
   for ( const t1 of baseToLeft ) {
     if ( opts.startingExchange && t1.marketPair.exchange !== opts.startingExchange ) { continue; }
     if ( opts.exchanges && opts.exchanges.indexOf(t1.marketPair.exchange) === -1) { continue; }
+    if ( t1.volumeInSellCurrency < opts.minimumVolume) { continue; }
     for ( const t2 of leftToRight ) {
       if ( opts.exchanges && opts.exchanges.indexOf(t2.marketPair.exchange) === -1) { continue; }
+      if ( t2.volumeInSellCurrency / ( t1.unitCost )  <= opts.minimumVolume ) { continue; }
       for ( const t3 of rightToBase) {
         if ( opts.exchanges && opts.exchanges.indexOf(t3.marketPair.exchange) === -1) { continue; }
+        if ( t3.volumeInSellCurrency / ( t1.unitCost * t2.unitCost )  <= opts.minimumVolume ) { continue; }
         const totalRate = t1.unitCost * t2.unitCost * t3.unitCost;
-        if (totalRate > 1.010) {
+        if (totalRate >= opts.rateThreshold) {
           cycles.push(makeCycle(t1, t2, t3));
         }
       }
@@ -211,6 +216,7 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
     minimumVolume: req.body.minimumVolume || 0,
     startingExchange: undefined,
     exchanges: req.body.exchanges || undefined,
+    rateThreshold: 1.05
   };
 
   const filterProvider = candidateTransitionFilter.bind(null, filterOptions);
