@@ -3,7 +3,8 @@ import {
   Response,
   NextFunction,
 } from "express";
-import * as AssetGraph from "../models/AssetGraph";
+import {ITransition, AssetSymbol, Edge, Exchange, Graph, IAsset,
+  IMarketPair, IMarketTicker, Transition, Vertex} from "../models/AssetGraph";
 import * as Orderbook from "../models/Orderbook";
 import Logger from "../util/logger";
 
@@ -34,24 +35,24 @@ declare namespace CycleSearchResult {
   }
 }
 
-function serializeCycle(transitions: AssetGraph.ITransition[]): string {
+function serializeCycle(transitions: ITransition[]): string {
   return transitions.reduce((identifierString, transition) => {
     identifierString += `${transition.sell.asset.symbol},${transition.marketPair.exchange},`;
     return identifierString;
   }, "").slice(0, -1);
 }
 
-function deserializeCycle(id: string): AssetGraph.ITransition[] {
+function deserializeCycle(id: string): ITransition[] {
   const idComponents = id.split(",");
   if (idComponents.length % 2 !== 0) {
     throw new Error("there must be an even number of id components");
   }
-  const transitions: AssetGraph.ITransition[] = [];
+  const transitions: ITransition[] = [];
   for (let i = 0; i < idComponents.length; i += 2) {
     const sellAssetSymbol = idComponents[i];
     const buyAssetSymbol = idComponents[i + 2] || idComponents[0];
     const exchange = idComponents[i + 1];
-    const edge = AssetGraph.Graph.getEdgeBySymbols(sellAssetSymbol, buyAssetSymbol);
+    const edge = Graph.getEdgeBySymbols(sellAssetSymbol, buyAssetSymbol);
     if (!edge) {
       logger.error({ sellAssetSymbol, buyAssetSymbol, exchange}, "could not find edge");
       throw new Error("could not find edge");
@@ -65,7 +66,7 @@ function deserializeCycle(id: string): AssetGraph.ITransition[] {
   return transitions;
 }
 
-function makeCycle(...transitions: AssetGraph.ITransition[]): CycleSearchResult.ICycle {
+function makeCycle(...transitions: ITransition[]): CycleSearchResult.ICycle {
   const cycle: CycleSearchResult.ICycle = transitions.reduce((signal, transition, transitionIndex) => {
     const trade = {
       buy: transition.buy.asset.symbol,
@@ -97,9 +98,9 @@ interface ITransitionFilterOptions {
 
 // TODO: Write test
 export function candidateTransitionFilter(opts: ITransitionFilterOptions,
-                                          previousTransitions: AssetGraph.ITransition[],
-                                          e: AssetGraph.Edge,
-                                          m: AssetGraph.IMarketPair): boolean {
+                                          previousTransitions: ITransition[],
+                                          e: Edge,
+                                          m: IMarketPair): boolean {
 
   if (previousTransitions.length === 0) {
     if (opts.startingExchange) {
@@ -122,12 +123,12 @@ export function candidateTransitionFilter(opts: ITransitionFilterOptions,
 }
 
 // TODO: validate input
-export function findCycles(req: Request, res: Response, next: NextFunction) {
+export function findCyclesOld(req: Request, res: Response, next: NextFunction) {
   const started = new Date(); // record when the request started
   const baseAsset = req.body.baseAssetSymbol; // asset from which the cycle search will be performed
   const timeoutMs = 200; // maximum time the search can run for
   const signalRateThreshold = 1.01; // minimum rate for a signal to be generated; +1% in this case
-  const size = 400; // the maximum number of cycles to return
+  const size = Infinity; // the maximum number of cycles to return
   // const exchangeFilter: string[] = req.query.exchanges.split(',') || undefined;
   const result: CycleSearchResult.IRootObject = {
     cycles: [],
@@ -135,7 +136,7 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
     timeExhausted: false,
   };
   if (!baseAsset) { throw new Error("no base asset provided"); }
-  const baseVertex = AssetGraph.Graph.getVertexByAsset({symbol: baseAsset});
+  const baseVertex = Graph.getVertexByAsset({symbol: baseAsset});
   if (!baseVertex) { throw new Error("no such asset in the graph"); }
 
   let combinationsExplored = 0;
@@ -178,6 +179,64 @@ export function findCycles(req: Request, res: Response, next: NextFunction) {
 
   result.took = new Date().getTime() - started.getTime();
   result.timeExhausted = timeExhausted;
+  res.json(result);
+}
+
+function evaluateTransitionTriangle(opts: ITransitionFilterOptions, baseToLeft: Transition[],
+                                    leftToRight: Transition[], rightToBase: Transition[]) {
+
+  const cycles: CycleSearchResult.ICycle[] = [];
+  for ( const t1 of baseToLeft ) {
+    if ( opts.startingExchange && t1.marketPair.exchange !== opts.startingExchange ) { continue; }
+    if ( opts.exchanges && opts.exchanges.indexOf(t1.marketPair.exchange) === -1) { continue; }
+    for ( const t2 of leftToRight ) {
+      if ( opts.exchanges && opts.exchanges.indexOf(t2.marketPair.exchange) === -1) { continue; }
+      for ( const t3 of rightToBase) {
+        if ( opts.exchanges && opts.exchanges.indexOf(t3.marketPair.exchange) === -1) { continue; }
+        const totalRate = t1.unitCost * t2.unitCost * t3.unitCost;
+        if (totalRate > 1.010) {
+          cycles.push(makeCycle(t1, t2, t3));
+        }
+      }
+    }
+  }
+  return cycles;
+}
+
+export function findCycles(req: Request, res: Response, next: NextFunction) {
+  const baseAssetSymbol = req.body.baseAssetSymbol;
+  const baseAssetVertex = Graph.getVertexByAsset({symbol: baseAssetSymbol});
+
+  const filterOptions: ITransitionFilterOptions = { allowDifferentExchanges: true,
+    minimumVolume: req.body.minimumVolume || 0,
+    startingExchange: undefined,
+    exchanges: req.body.exchanges || undefined,
+  };
+
+  const filterProvider = candidateTransitionFilter.bind(null, filterOptions);
+
+  const result: CycleSearchResult.IRootObject = {
+    took: 1337,
+    timeExhausted: false,
+    cycles: [],
+  };
+
+  const neighbors = baseAssetVertex!.getNeighbors();
+  req.log.info("Searching from %s , neighbor count: ", baseAssetSymbol, neighbors.length);
+  for ( const neighborLeft of neighbors ) {
+    for ( const neighborRight of neighbors ) {
+      // we know for sure that an edge from baseAsset to neighbors exits
+      // but we need to check if neighbors are connectec too. this would form a triangle.
+      const edgeLeftToRigth = Graph.getEdgeBySymbols(neighborLeft.asset.symbol, neighborRight.asset.symbol);
+      if (!edgeLeftToRigth) { continue; }
+      const edgeBaseToLeft = Graph.getEdgeBySymbols(baseAssetSymbol, neighborLeft.asset.symbol)!;
+      const edgeRightToBase = Graph.getEdgeBySymbols(neighborRight.asset.symbol, baseAssetSymbol)!;
+      const tsBaseToLeft = edgeBaseToLeft.getTransitions(() => true);
+      const tsLeftToRight = edgeLeftToRigth.getTransitions(() => true);
+      const tsRightToBase = edgeRightToBase.getTransitions(() => true);
+      result.cycles.push(... evaluateTransitionTriangle(filterOptions, tsBaseToLeft, tsLeftToRight, tsRightToBase));
+    }
+  }
   res.json(result);
 }
 
@@ -259,5 +318,5 @@ export async function getCycle(req: Request, res: Response, next: NextFunction) 
 }
 
 export function getAvailableAssetSymbols(req: Request, res: Response) {
-  return res.json({availableSymbols: AssetGraph.Graph.getAvailableAssetSymbols()});
+  return res.json({availableSymbols: Graph.getAvailableAssetSymbols()});
 }
