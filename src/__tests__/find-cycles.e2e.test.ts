@@ -3,6 +3,7 @@ import request from "supertest";
 import TICKER_TEST_FIXTURE from "./__fixtures__/EUR-LTL-USD-tickers";
 import MongoMemoryServer from "mongodb-memory-server";
 import {MongoClient} from "mongodb";
+jest.mock('../models/Orderbook');
 
 let server: Server;
 let httpServer: any;
@@ -36,6 +37,16 @@ async function teardownServer(): Promise<void> {
   }
 }
 
+function parseStreamedSearchResults(body: string) {
+  const cycleArray: any[] = [];
+  body.split(/\r?\n/).forEach((line) => {
+    if (line.startsWith("{")) {
+      cycleArray.push(JSON.parse(line));
+    }
+  });
+  return cycleArray;
+}
+
 beforeAll(setupServer, 10 * 1000);
 afterAll(teardownServer, 10 * 1000);
 
@@ -46,34 +57,28 @@ describe("POST /cycles/search", () => {
         baseAssetSymbol: "EUR",
       });
     expect(result.status).toBe(200);
-    expect(result.body.timeExhausted).toBe(false);
-    expect(result.body.took).toBeGreaterThan(0);
-    expect(result.body.cycles[0].id).toBe("EUR,Exchange 1,LTL,Exchange 2,USD,Exchange 3");
-    expect(result.body.cycles[0].maxRate).toBeCloseTo(1.25);
-    expect(result.body.cycles[0].trades[0]).toEqual(expect.objectContaining({
+    const cycles = parseStreamedSearchResults(result.text);
+    expect(cycles[0].id).toBe("EUR,Exchange 1,LTL,Exchange 2,USD,Exchange 3");
+    expect(cycles[0].maxRate).toBeCloseTo(1.1598);
+    expect(cycles[0].trades[0]).toEqual(expect.objectContaining({
       sell: "EUR",
       buy: "LTL",
       exchange: "Exchange 1",
-      relativeVolume : 50, // EUR
-       unitLastPriceDate: TICKER_TEST_FIXTURE.prices[0].WriteDate.toISOString(),
     }));
-    expect(result.body.cycles[0].trades[0].unitLastPrice).toBeCloseTo(3.33333333, 8); // Checks up to the eighth digit
-    expect(result.body.cycles[0].trades[1]).toEqual(expect.objectContaining({
+    expect(cycles[0].trades[0].unitLastPrice).toBeCloseTo(3.225806451, 8); // Checks up to the eighth digit
+    expect(cycles[0].trades[1]).toEqual(expect.objectContaining({
       sell: "LTL",
       buy: "USD",
       exchange: "Exchange 2",
-      relativeVolume : 4545.454545454545, // EUR
-      unitLastPrice: 0.33,
-       unitLastPriceDate: TICKER_TEST_FIXTURE.prices[1].WriteDate.toISOString(),
+      relativeVolume : 4843.75, // EUR
     }));
-    expect(result.body.cycles[0].trades[2]).toEqual(expect.objectContaining({
+    expect(cycles[0].trades[2]).toEqual(expect.objectContaining({
       sell: "USD",
       buy: "EUR",
       exchange: "Exchange 3",
-      relativeVolume : 45.45454545454545, // EUR
-     unitLastPriceDate: TICKER_TEST_FIXTURE.prices[2].WriteDate.toISOString(),
+      relativeVolume : 48.43749999999999, // EUR
     }));
-    expect(result.body.cycles[0].trades[2].unitLastPrice).toBeCloseTo(1.136363636, 8); // Checks up to the eighth digit
+    expect(cycles[0].trades[2].unitLastPrice).toBeCloseTo(1.123595505, 8); // Checks up to the eighth digit
   });
 
   /*
@@ -86,7 +91,7 @@ describe("POST /cycles/search", () => {
     expect(result.status).toBe(200);
     expect(result.body.timeExhausted).toBe(false);
     expect(result.body.took).toBeGreaterThanOrEqual(0);
-    expect(result.body.cycles).toHaveLength(0);
+    expect(cycles).toHaveLength(0);
   });
    */
 
@@ -97,9 +102,8 @@ describe("POST /cycles/search", () => {
         exchanges: ["Exchange 1", "Exchange 2"],
       });
     expect(result.status).toBe(200);
-    expect(result.body.timeExhausted).toBe(false);
-    expect(result.body.took).toBeGreaterThanOrEqual(0);
-    expect(result.body.cycles).toHaveLength(0); });
+    const cycles = parseStreamedSearchResults(result.text);
+    expect(cycles).toHaveLength(0); });
 });
 
 describe("GET /symbols", () => {

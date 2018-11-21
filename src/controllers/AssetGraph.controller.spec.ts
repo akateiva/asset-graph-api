@@ -39,10 +39,10 @@ test("selling 2 BTC for 10800 USD", () => {
   expect(result).toBe(10800);
 });
 
-test("selling 3 BTC on an insufficient orderbook should return null", () => {
+test("selling 3 BTC on an insufficient orderbook should return 0", () => {
   const orders = [ [5400, 2] ] as Array<[number, number]>;
   const result = computeTransitionRevenue(3, orders);
-  expect(result).toBe(NaN);
+  expect(result).toBe(0);
 });
 
 test("selling 5400 USD for 1 BTC with ask order", () => {
