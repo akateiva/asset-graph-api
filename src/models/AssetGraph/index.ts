@@ -56,7 +56,7 @@ export async function attachToMongo(client: MongoClient, useChangeStream: boolea
   // Load data on connect
   logger.info("querying tickers from database");
   const collection = client.db("xlab-prices").collection("prices");
-  const fiveMinutesAgo = new Date(new Date().getTime() - 5 * 60 * 1000);
+  const fiveMinutesAgo = new Date(new Date().getTime() - 20 * 60 * 1000);
   const result = await collection.aggregate([{
     // Limit this query to prices from the last 5 minutes
     $match: {

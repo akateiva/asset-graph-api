@@ -3,16 +3,42 @@ import Logger from "../util/logger";
 import {
   ITransition,
 } from "./AssetGraph";
+import Bottleneck from "bottleneck";
+import NodeCache from "node-cache";
 
 const log = Logger.child({
   name: "Orderbook",
 });
 
-interface IExchangeModule {
-  test: () => void;
-  loadMarkets: () => Promise < void > ;
-  symbols: string[];
-  fetchOrderBook: (marketSymbol: string) => Promise < IOrderBook > ;
+class ExchangeModule {
+  private ccxtModule: ccxt.Exchange;
+  private rateLimiter = new Bottleneck({minTime: 1000, maxConcurrent:  3});
+  private orderbookCache = new NodeCache({stdTTL: 30, checkperiod: 15});
+
+  constructor(private exchangeName: string) {
+    // @ts-ignore
+    this.ccxtModule = new ccxt[exchangeName]() as ccxt.Exchange;
+  }
+
+  get symbols() {
+    return this.ccxtModule.symbols;
+  }
+
+  public async init(): Promise < ExchangeModule > {
+    await this.ccxtModule.loadMarkets();
+    return this;
+  }
+
+  public async fetchOrderBook(marketSymbol: string): Promise <IOrderBook> {
+    let orderbook = this.orderbookCache.get<IOrderBook|Promise<IOrderBook>>(marketSymbol);
+    if (orderbook === undefined) {
+      log.debug("cache miss %s %s", this.exchangeName, marketSymbol);
+      orderbook = this.rateLimiter.schedule<IOrderBook>(
+        this.ccxtModule.fetchOrderBook.bind(this.ccxtModule, marketSymbol));
+      this.orderbookCache.set<IOrderBook|Promise<IOrderBook>>(marketSymbol, orderbook);
+    }
+    return orderbook;
+  }
 }
 
 export interface IOrderBook {
@@ -21,9 +47,9 @@ export interface IOrderBook {
 }
 
 const exchangeModuleMap = new Map < string,
-  IExchangeModule | Promise < IExchangeModule > > ();
+  ExchangeModule | Promise < ExchangeModule > > ();
 
-async function getExchangeModuleForTransition(transition: ITransition): Promise < IExchangeModule > {
+async function getExchangeModuleForTransition(transition: ITransition): Promise < ExchangeModule > {
   let exchangeName = transition.marketPair.exchange.toLowerCase();
 
   // TODO: fix inconsistent exchange identifiers
@@ -37,10 +63,10 @@ async function getExchangeModuleForTransition(transition: ITransition): Promise 
       log.debug("getExchangeModuleForTransition: constructing new ccxt exchange module for %s", exchangeName);
       exchangeModule = (async () => {
         // @ts-ignore
-        const ccxtModule = new ccxt[exchangeName]() as IExchangeModule;
-        await ccxtModule.loadMarkets();
-        exchangeModuleMap.set(exchangeName, ccxtModule);
-        return ccxtModule;
+        const exchangeModule = new ExchangeModule(exchangeName);
+        await exchangeModule.init();
+        exchangeModuleMap.set(exchangeName, exchangeModule);
+        return exchangeModule;
       })();
       exchangeModuleMap.set(exchangeName, exchangeModule);
       log.debug("getExchangeModuleForTransition: markets loaded for %s", exchangeName);
@@ -53,7 +79,7 @@ async function getExchangeModuleForTransition(transition: ITransition): Promise 
 }
 
 function getMarketPairSymbolForTransition(transition: ITransition,
-                                          exchangeModule: IExchangeModule): [string, "ask" | "bid"] {
+                                          exchangeModule: ExchangeModule): [string, "ask" | "bid"] {
   let pair: string;
   let askOrBid: "ask" | "bid";
   let [buy, sell] = [transition.buy.asset.symbol, transition.sell.asset.symbol];
@@ -78,13 +104,13 @@ function getMarketPairSymbolForTransition(transition: ITransition,
   } else {
     throw new Error(`failed to find a market pair for buy/sell ${buy}/${sell}`);
   }
-  log.debug({sell, buy, pair, askOrBid}, "getMarketPairSymbolForTransition");
   return [pair, askOrBid];
 }
 
 export async function getOrderbookForTransition(transition: ITransition): Promise < [IOrderBook, "ask" | "bid"] > {
   const exchangeModule = await getExchangeModuleForTransition(transition);
   const [marketPairSymbol, askOrBid] = getMarketPairSymbolForTransition(transition, exchangeModule);
+
   const orderbook = await exchangeModule.fetchOrderBook(marketPairSymbol);
   return [orderbook, askOrBid];
 }

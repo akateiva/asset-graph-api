@@ -7,6 +7,8 @@ import {ITransition, AssetSymbol, Edge, Exchange, Graph, IAsset,
   IMarketPair, IMarketTicker, Transition, Vertex} from "../models/AssetGraph";
 import * as Orderbook from "../models/Orderbook";
 import Logger from "../util/logger";
+import { Observable } from "rxjs";
+import * as Bluebird from "bluebird";
 
 const logger = Logger.child({
   name: "AssetGraphController",
@@ -95,161 +97,126 @@ interface ITransitionFilterOptions {
   minimumVolume: number;
   exchanges: string[] | undefined;
   rateThreshold: number;
+  endownment: number;
 }
 
-// TODO: Write test
-export function candidateTransitionFilter(opts: ITransitionFilterOptions,
-                                          previousTransitions: ITransition[],
-                                          e: Edge,
-                                          m: IMarketPair): boolean {
-
-  if (previousTransitions.length === 0) {
-    if (opts.startingExchange) {
-      if (opts.startingExchange !== m.exchange) { return false; }
-    }
-  } else {
-    if (!opts.allowDifferentExchanges) {
-      if (previousTransitions[previousTransitions.length - 1].marketPair.exchange !== m.exchange) {
-        return false;
-      }
-    }
-  }
-  const candidateTransitionVolumeInSellCurrency = (m.market === e.start.asset) ? m.baseVolume / m.basePrice : m.baseVolume; 
-  const relativeTransitionVolume = previousTransitions.reduce((a, t) => a *= t.unitCost, candidateTransitionVolumeInSellCurrency);
-                                            //if (relativeTransitionVolume < opts.minimumVolume) { return false; }
-  if (opts.exchanges) {
-    if (opts.exchanges.indexOf(m.exchange) < 0) { return false;  }
-  }
-  return true;
+function getOrderbookForTransition(t: Transition): Promise<Orderbook.IOrderBook> {
+  return Orderbook.getOrderbookForTransition(t).then((o) => o[0]);
 }
 
-// TODO: validate input
-export function findCyclesOld(req: Request, res: Response, next: NextFunction) {
-  const started = new Date(); // record when the request started
-  const baseAsset = req.body.baseAssetSymbol; // asset from which the cycle search will be performed
-  const timeoutMs = 200; // maximum time the search can run for
-  const signalRateThreshold = 1.01; // minimum rate for a signal to be generated; +1% in this case
-  const size = Infinity; // the maximum number of cycles to return
-  // const exchangeFilter: string[] = req.query.exchanges.split(',') || undefined;
-  const result: CycleSearchResult.IRootObject = {
-    cycles: [],
-    took: NaN,
-    timeExhausted: false,
-  };
-  if (!baseAsset) { throw new Error("no base asset provided"); }
-  const baseVertex = Graph.getVertexByAsset({symbol: baseAsset});
-  if (!baseVertex) { throw new Error("no such asset in the graph"); }
+async function getOrderbookBasedRate(ab: Transition, bc: Transition, ca: Transition, endownment: number): Promise<number> {
+  const transitions = [ab, bc, ca];
+  const orderbooks = await Promise.all(transitions.map((t) => getOrderbookForTransition(t)));
 
-  let combinationsExplored = 0;
-  let timeExhausted = false;
-  const timeout = setTimeout(() => {
-    timeExhausted = true;
-  }, timeoutMs);
-
-  const filterOptions: ITransitionFilterOptions = { allowDifferentExchanges: true,
-    minimumVolume: req.body.minimumVolume || 0,
-    startingExchange: undefined,
-    exchanges: req.body.exchanges || undefined,
-    rateThreshold: 1.01
-  };
-
-  const filterProvider = candidateTransitionFilter.bind(null, filterOptions);
-
-  firstOrderLoop:
-    for (const firstOrderTransition of baseVertex.getTransitions(filterProvider.bind(null, []))) {
-      for (const secondOrderTransition of firstOrderTransition.buy
-          .getTransitions( filterProvider.bind(null, [firstOrderTransition ]) )) {
-        if (firstOrderTransition.sell === secondOrderTransition.buy) {
-          continue;
-        }
-        for (const thirdOrderTransition of secondOrderTransition.buy
-            .getTransitions( filterProvider.bind(null, [firstOrderTransition, secondOrderTransition]) )) {
-          combinationsExplored++;
-          if (firstOrderTransition.sell !== thirdOrderTransition.buy) {
-            continue;
-          }
-          const rate = firstOrderTransition.unitCost * secondOrderTransition.unitCost * thirdOrderTransition.unitCost;
-          if (rate > signalRateThreshold) {
-            result.cycles.push(makeCycle(firstOrderTransition, secondOrderTransition, thirdOrderTransition));
-          }
-          if (timeExhausted || result.cycles.length >= size) {
-            break firstOrderLoop;
-          }
-        }
-      }
+  const marketOrders = transitions.map((t, idx) => {
+    if (t.positionType === "long") {
+      return orderbooks[idx].asks.map(([price, amount]) => [1 / price, amount * price] as [number, number]);
+    } else {
+      return orderbooks[idx].bids;
     }
+  });
 
-  result.took = new Date().getTime() - started.getTime();
-  result.timeExhausted = timeExhausted;
-  res.json(result);
+  const margin = computeTotalRevenue(0.001, marketOrders) / 0.001;
+  return margin;
 }
 
-function evaluateTransitionTriangle(opts: ITransitionFilterOptions, baseToLeft: Transition[],
-                                    leftToRight: Transition[], rightToBase: Transition[]) {
+function evaluateEdges(opts: ITransitionFilterOptions, ab: Edge, bc: Edge, ca: Edge)
+  : Array<Promise<CycleSearchResult.ICycle|undefined>> {
+  const transitionEvaluationPromises: Array<Promise<CycleSearchResult.ICycle|undefined>> = [];
 
-  const cycles: CycleSearchResult.ICycle[] = [];
-  for ( const t1 of baseToLeft ) {
+  for ( const t1 of ab.getTransitions(() => true)) {
     if ( opts.startingExchange && t1.marketPair.exchange !== opts.startingExchange ) { continue; }
     if ( opts.exchanges && opts.exchanges.indexOf(t1.marketPair.exchange) === -1) { continue; }
     if ( t1.volumeInSellCurrency < opts.minimumVolume) { continue; }
-    for ( const t2 of leftToRight ) {
+    for ( const t2 of bc.getTransitions(() => true)) {
       if ( opts.exchanges && opts.exchanges.indexOf(t2.marketPair.exchange) === -1) { continue; }
       if ( t2.volumeInSellCurrency / ( t1.unitCost )  <= opts.minimumVolume ) { continue; }
-      for ( const t3 of rightToBase) {
+      for ( const t3 of ca.getTransitions(() => true)) {
         if ( opts.exchanges && opts.exchanges.indexOf(t3.marketPair.exchange) === -1) { continue; }
         if ( t3.volumeInSellCurrency / ( t1.unitCost * t2.unitCost )  <= opts.minimumVolume ) { continue; }
-        const totalRate = t1.unitCost * t2.unitCost * t3.unitCost;
-        if (totalRate >= opts.rateThreshold) {
-          cycles.push(makeCycle(t1, t2, t3));
-        }
+        const tickerRate = t1.unitCost * t2.unitCost * t3.unitCost;
+        transitionEvaluationPromises.push(getOrderbookBasedRate(t1, t2, t3, opts.endownment).then((orderbookRate) => {
+          logger.debug({tickerRate,
+            orderbookRate,
+            abHash: ab.getHash(),
+            bc: bc.getHash(),
+            ca: ca.getHash(),
+            abExchange: t1.marketPair.exchange,
+            bcExchange: t2.marketPair.exchange,
+            caExchange: t3.marketPair.exchange,
+          }, "evaluated orderbook");
+          const cycle = makeCycle(t1, t2, t3);
+          cycle.maxRate = orderbookRate;
+          return cycle;
+        }, (error) => {
+          logger.error(error);
+          return undefined;
+        }));
       }
     }
   }
-  return cycles;
+
+  return transitionEvaluationPromises;
 }
 
-export function findCycles(req: Request, res: Response, next: NextFunction) {
-  const baseAssetSymbol = req.body.baseAssetSymbol;
-  const baseAssetVertex = Graph.getVertexByAsset({symbol: baseAssetSymbol});
+export async function findCycles(req: Request, res: Response, next: NextFunction) {
+  let progressInterval: any;
+  try {
+    const baseAssetSymbol = req.body.baseAssetSymbol;
+    const baseAssetVertex = Graph.getVertexByAsset({symbol: baseAssetSymbol});
 
-  const filterOptions: ITransitionFilterOptions = { allowDifferentExchanges: true,
-    minimumVolume: req.body.minimumVolume || 0,
-    startingExchange: undefined,
-    exchanges: req.body.exchanges || undefined,
-    rateThreshold: 1.05
-  };
+    const filterOptions: ITransitionFilterOptions = { allowDifferentExchanges: true,
+      minimumVolume: req.body.minimumVolume || 0,
+      startingExchange: undefined,
+      exchanges: req.body.exchanges || undefined,
+      endownment: req.body.endownment || 0.1,
+      rateThreshold: 0.8,
+    };
 
-  const filterProvider = candidateTransitionFilter.bind(null, filterOptions);
-
-  const result: CycleSearchResult.IRootObject = {
-    took: 1337,
-    timeExhausted: false,
-    cycles: [],
-  };
-
-  const neighbors = baseAssetVertex!.getNeighbors();
-  req.log.info("Searching from %s , neighbor count: ", baseAssetSymbol, neighbors.length);
-  for ( const neighborLeft of neighbors ) {
-    for ( const neighborRight of neighbors ) {
-      // we know for sure that an edge from baseAsset to neighbors exits
-      // but we need to check if neighbors are connectec too. this would form a triangle.
-      const edgeLeftToRigth = Graph.getEdgeBySymbols(neighborLeft.asset.symbol, neighborRight.asset.symbol);
-      if (!edgeLeftToRigth) { continue; }
-      const edgeBaseToLeft = Graph.getEdgeBySymbols(baseAssetSymbol, neighborLeft.asset.symbol)!;
-      const edgeRightToBase = Graph.getEdgeBySymbols(neighborRight.asset.symbol, baseAssetSymbol)!;
-      const tsBaseToLeft = edgeBaseToLeft.getTransitions(() => true);
-      const tsLeftToRight = edgeLeftToRigth.getTransitions(() => true);
-      const tsRightToBase = edgeRightToBase.getTransitions(() => true);
-      result.cycles.push(... evaluateTransitionTriangle(filterOptions, tsBaseToLeft, tsLeftToRight, tsRightToBase));
+    const neighbors = baseAssetVertex!.getNeighbors();
+    req.log.info("Searching from %s , neighbor count: ", baseAssetSymbol, neighbors.length);
+    const edgeEvaluationPromises: Array<Promise<CycleSearchResult.ICycle|undefined>> = [];
+    let completedEdgeEvaluations = 0;
+    res.writeHead(200, {"Content-Type": "text/search-stream"});
+    for ( const neighborB of neighbors ) {
+      for ( const neighborC of neighbors ) {
+        // we know for sure that an edge from baseAsset to neighbors exits
+        // but we need to check if neighbors are connectec too. this would form a triangle.
+        const edgeBC = Graph.getEdgeBySymbols(neighborB.asset.symbol, neighborC.asset.symbol);
+        if (!edgeBC) { continue; }
+        const edgeAB = Graph.getEdgeBySymbols(baseAssetSymbol, neighborB.asset.symbol)!;
+        const edgeCA = Graph.getEdgeBySymbols(neighborC.asset.symbol, baseAssetSymbol)!;
+        evaluateEdges(filterOptions, edgeAB, edgeBC, edgeCA).forEach((edgeEvaluationPromise) => {
+          edgeEvaluationPromise.then((cycles) => {
+            completedEdgeEvaluations++;
+            if (!cycles) { return; }
+            if (cycles.maxRate > 1) {
+              res.write(JSON.stringify(cycles) + "\n");
+            }
+            return cycles;
+          }, (error) => {
+            logger.error(error, "evaluation error");
+          });
+          edgeEvaluationPromises.push(edgeEvaluationPromise);
+        });
+      }
     }
+    logger.info("awaiting %d edge evaluation promises", edgeEvaluationPromises.length);
+    progressInterval = setInterval(() => {
+      res.write(`progress ${completedEdgeEvaluations} / ${edgeEvaluationPromises.length}\n`);
+    }, 1000);
+    await Promise.all(edgeEvaluationPromises);
+  } catch (e) {
+    req.log.error(e);
   }
-  res.json(result);
+  clearInterval(progressInterval);
+  res.end();
+  // res.json(result);
 }
 
 export function computeTransitionRevenue(endownment: number, orders: Array < [number, number] > ): number {
   let cost = 0;
   let revenue = 0;
-  logger.debug("starting integrations");
   for (const order of orders) {
     const orderAmount = order[1];
     const orderPrice = order[0];
@@ -260,12 +227,10 @@ export function computeTransitionRevenue(endownment: number, orders: Array < [nu
     } else {
       revenue += toSell * orderPrice;
       cost += toSell;
-      logger.debug({toSell, orderPrice}, "one order is enough");
       break;
     }
-    logger.debug({orderAmount, orderPrice, revenue, cost, nextToSell: endownment - cost}, "integration step");
   }
-  if (cost !== endownment) { revenue = NaN; }
+  if (cost !== endownment) { revenue = 0; }
 
   return revenue;
 }

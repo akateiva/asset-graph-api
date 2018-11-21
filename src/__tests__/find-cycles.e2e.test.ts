@@ -75,7 +75,7 @@ describe("POST /cycles/search", () => {
     }));
     expect(result.body.cycles[0].trades[2].unitLastPrice).toBeCloseTo(1.136363636, 8); // Checks up to the eighth digit
   });
-  
+
   /*
   it("finds no cycles from EUR with minimum volume of 10k EUR", async () => {
     const result = await request(httpServer).post("/cycles/search")
