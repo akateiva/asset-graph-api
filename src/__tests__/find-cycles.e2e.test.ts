@@ -39,9 +39,9 @@ async function teardownServer(): Promise<void> {
 
 function parseStreamedSearchResults(body: string) {
   const cycleArray: any[] = [];
-  body.split(/\r?\n/).forEach((line) => {
-    if (line.startsWith("{")) {
-      cycleArray.push(JSON.parse(line));
+  body.split(/[\r?\n]+/).forEach((line) => {
+    if (line.startsWith("data: {")) {
+      cycleArray.push(JSON.parse(line.slice(6)));
     }
   });
   return cycleArray;

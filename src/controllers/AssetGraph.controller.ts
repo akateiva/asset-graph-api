@@ -177,7 +177,7 @@ export async function findCycles(req: Request, res: Response, next: NextFunction
     req.log.info("Searching from %s , neighbor count: ", baseAssetSymbol, neighbors.length);
     const edgeEvaluationPromises: Array<Promise<CycleSearchResult.ICycle|undefined>> = [];
     let completedEdgeEvaluations = 0;
-    res.writeHead(200, {"Content-Type": "text/search-stream"});
+    res.writeHead(200, {"Content-Type": "text/event-stream"});
     for ( const neighborB of neighbors ) {
       for ( const neighborC of neighbors ) {
         // we know for sure that an edge from baseAsset to neighbors exits
@@ -191,7 +191,7 @@ export async function findCycles(req: Request, res: Response, next: NextFunction
             completedEdgeEvaluations++;
             if (!cycles) { return; }
             if (cycles.maxRate > 1) {
-              res.write(JSON.stringify(cycles) + "\n");
+              res.write("data: " + JSON.stringify(cycles) + "\n\n");
             }
             return cycles;
           }, (error) => {
@@ -203,13 +203,14 @@ export async function findCycles(req: Request, res: Response, next: NextFunction
     }
     logger.info("awaiting %d edge evaluation promises", edgeEvaluationPromises.length);
     progressInterval = setInterval(() => {
-      res.write(`progress ${completedEdgeEvaluations} / ${edgeEvaluationPromises.length}\n`);
+      res.write(`data: progress ${completedEdgeEvaluations} ${edgeEvaluationPromises.length}\n\n`);
     }, 1000);
     await Promise.all(edgeEvaluationPromises);
   } catch (e) {
     req.log.error(e);
   }
   clearInterval(progressInterval);
+  res.write("data: end\n\n\n");
   res.end();
   // res.json(result);
 }

@@ -12,7 +12,7 @@ const log = Logger.child({
 
 class ExchangeModule {
   private ccxtModule: ccxt.Exchange;
-  private rateLimiter = new Bottleneck({minTime: 1000, maxConcurrent:  3});
+  private rateLimiter = new Bottleneck({minTime: 200, maxConcurrent:  3});
   private orderbookCache = new NodeCache({stdTTL: 30, checkperiod: 15});
 
   constructor(private exchangeName: string) {
@@ -33,8 +33,12 @@ class ExchangeModule {
     let orderbook = this.orderbookCache.get<IOrderBook|Promise<IOrderBook>>(marketSymbol);
     if (orderbook === undefined) {
       log.debug("cache miss %s %s", this.exchangeName, marketSymbol);
-      orderbook = this.rateLimiter.schedule<IOrderBook>(
-        this.ccxtModule.fetchOrderBook.bind(this.ccxtModule, marketSymbol));
+      orderbook = this.rateLimiter.schedule<IOrderBook>(() => {
+        return this.ccxtModule.fetchOrderBook(marketSymbol).then((result) => {
+          this.orderbookCache.set<IOrderBook>(marketSymbol, result);
+          return result;
+        });
+      });
       this.orderbookCache.set<IOrderBook|Promise<IOrderBook>>(marketSymbol, orderbook);
     }
     return orderbook;

@@ -48,6 +48,10 @@ export default class Server {
 
   private setupRoutes() {
     this.app.post("/cycles/search", AssetGraphController.findCycles);
+    this.app.get("/cycles/search", (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      Object.assign(req.body, JSON.parse(req.query.query));
+      next();
+    }, AssetGraphController.findCycles);
     this.app.get("/cycles/:cycleId", AssetGraphController.getCycle);
     this.app.get("/symbols", AssetGraphController.getAvailableAssetSymbols);
   }
